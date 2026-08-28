@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm") version "2.4.10"
+    application
 }
 
 group = "me.pinfort"
@@ -15,6 +16,10 @@ dependencies {
 
 kotlin {
     jvmToolchain(25)
+}
+
+application {
+    mainClass.set("me.pinfort.tsselect.MainKt")
 }
 
 tasks.test {
