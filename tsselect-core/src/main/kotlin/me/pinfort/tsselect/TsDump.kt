@@ -180,7 +180,7 @@ class TsDump {
         pos: Long,
     ) {
         val idx = resyncCount - 1
-        if (idx >= RESYNC_LOG_MAX || idx < 0) {
+        if (idx !in 0..<RESYNC_LOG_MAX) {
             // do nothing
             return
         }
