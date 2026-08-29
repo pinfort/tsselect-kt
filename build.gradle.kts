@@ -1,3 +1,4 @@
+import org.jlleitschuh.gradle.ktlint.KtlintExtension
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 plugins {
@@ -10,14 +11,16 @@ allprojects {
     version = "1.0-SNAPSHOT"
 }
 
+// Each module opts in with `id("org.jlleitschuh.gradle.ktlint")` in its own
+// plugins block; the shared configuration lives here.
 subprojects {
-    apply(plugin = "org.jlleitschuh.gradle.ktlint")
-
-    configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
-        version.set("1.5.0")
-        reporters {
-            reporter(ReporterType.PLAIN)
-            reporter(ReporterType.CHECKSTYLE)
+    plugins.withId("org.jlleitschuh.gradle.ktlint") {
+        configure<KtlintExtension> {
+            version.set("1.5.0")
+            reporters {
+                reporter(ReporterType.PLAIN)
+                reporter(ReporterType.CHECKSTYLE)
+            }
         }
     }
 }

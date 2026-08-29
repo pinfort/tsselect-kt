@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm")
     application
+    id("org.jlleitschuh.gradle.ktlint")
 }
 
 repositories {
