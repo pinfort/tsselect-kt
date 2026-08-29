@@ -17,7 +17,7 @@ fun tsSelect(
     src: File,
     dst: File,
     pidMap: ByteArray,
-    progress: ProgressListener = ProgressListener.NONE
+    progress: ProgressListener = ProgressListener.NONE,
 ) {
     src.inputStream().use { input ->
         val output = BufferedOutputStream(FileOutputStream(dst), 65536)
@@ -40,7 +40,7 @@ fun tsSelect(
     output: OutputStream,
     totalBytes: Long,
     pidMap: ByteArray,
-    progress: ProgressListener = ProgressListener.NONE
+    progress: ProgressListener = ProgressListener.NONE,
 ) {
     val header = TsHeader()
 

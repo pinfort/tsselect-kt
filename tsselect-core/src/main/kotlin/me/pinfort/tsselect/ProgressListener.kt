@@ -5,7 +5,10 @@ package me.pinfort.tsselect
 // supplies its own listener. onProgress fires once per read chunk - throttling
 // and formatting are the caller's business.
 interface ProgressListener {
-    fun onProgress(processed: Long, total: Long) {}
+    fun onProgress(
+        processed: Long,
+        total: Long,
+    ) {}
 
     fun onFinish() {}
 

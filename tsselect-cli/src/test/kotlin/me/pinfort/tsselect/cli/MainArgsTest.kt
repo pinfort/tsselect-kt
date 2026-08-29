@@ -4,7 +4,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class MainArgsTest {
-
     @Test
     fun parsesHexWithPrefix() {
         assertEquals(0x1000, strtolBase0("0x1000"))

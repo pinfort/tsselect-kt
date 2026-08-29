@@ -4,7 +4,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class PidMapTest {
-
     @Test
     fun selectsListedPids() {
         val map = pidMapOf(listOf(0x100, 0x1fff))

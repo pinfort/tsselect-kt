@@ -18,7 +18,10 @@ class TsDump {
 
     // Convenience entry point: opens and closes the file itself. Propagates
     // FileNotFoundException when the file cannot be read.
-    fun dump(file: File, progress: ProgressListener = ProgressListener.NONE) {
+    fun dump(
+        file: File,
+        progress: ProgressListener = ProgressListener.NONE,
+    ) {
         FileInputStream(file).use { ins ->
             dump(ins, file.length(), progress)
         }
@@ -26,7 +29,11 @@ class TsDump {
 
     // Primary entry point. The caller owns the stream. totalBytes is only used
     // to compute the fraction handed to the progress listener.
-    fun dump(input: InputStream, totalBytes: Long, progress: ProgressListener = ProgressListener.NONE) {
+    fun dump(
+        input: InputStream,
+        totalBytes: Long,
+        progress: ProgressListener = ProgressListener.NONE,
+    ) {
         val buf = ByteArray(8192)
         var offset = 0L
         var idx = 0
@@ -107,7 +114,11 @@ class TsDump {
 
     // Consolidated packet-processing body (C duplicates it at lines 250-303
     // and 346-398 of tsselect.c).
-    fun processPacket(buf: ByteArray, pos: Int, filePos: Long) {
+    fun processPacket(
+        buf: ByteArray,
+        pos: Int,
+        filePos: Long,
+    ) {
         header.parse(buf, pos)
         if (header.adaptationFieldControl and 2 != 0) {
             adapt.parse(buf, pos + 4)
@@ -164,7 +175,10 @@ class TsDump {
         }
     }
 
-    private fun addDropInfo(pid: Int, pos: Long) {
+    private fun addDropInfo(
+        pid: Int,
+        pos: Long,
+    ) {
         val idx = resyncCount - 1
         if (idx >= RESYNC_LOG_MAX || idx < 0) {
             // do nothing

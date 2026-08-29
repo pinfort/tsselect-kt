@@ -9,7 +9,10 @@ import java.util.Locale
 class StderrProgressListener : ProgressListener {
     private var idx = 0
 
-    override fun onProgress(processed: Long, total: Long) {
+    override fun onProgress(
+        processed: Long,
+        total: Long,
+    ) {
         if (idx and 0x0f == 0) {
             val pct = (10000L * processed / total).toInt()
             System.err.print("\rprocessing: %2d.%02d%%".format(Locale.ROOT, pct / 100, pct % 100))

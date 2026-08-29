@@ -4,7 +4,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class PacketTest {
-
     @Test
     fun parsesTsHeaderFields() {
         val packet = tsPacket(pid = 0x1abc, cc = 0x0d, afc = 3, tei = true, scrambling = 2)

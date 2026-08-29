@@ -4,7 +4,10 @@ const val SYNC_BYTE: Byte = 0x47
 
 // Port of select_unit_size: histogram of 0x47-to-0x47 strides in [188, 320),
 // returns the most frequent one, or 0 when the buffer does not validate.
-fun selectUnitSize(buf: ByteArray, len: Int): Int {
+fun selectUnitSize(
+    buf: ByteArray,
+    len: Int,
+): Int {
     val count = IntArray(320 - 188)
 
     // 1st step, count up 0x47 interval
@@ -47,7 +50,12 @@ fun selectUnitSize(buf: ByteArray, len: Int): Int {
 
 // Port of resync: find 8 consecutive sync bytes at unit_size stride.
 // Returns the index of the recovered sync position, or -1.
-fun resync(buf: ByteArray, from: Int, len: Int, unitSize: Int): Int {
+fun resync(
+    buf: ByteArray,
+    from: Int,
+    len: Int,
+    unitSize: Int,
+): Int {
     var pos = from
     val limit = len - unitSize * 8
     while (pos < limit) {
@@ -70,7 +78,12 @@ fun resync(buf: ByteArray, from: Int, len: Int, unitSize: Int): Int {
 
 // Port of resync_force: relaxed variant for the buffer tail — every remaining
 // unit_size stride position must be a sync byte.
-fun resyncForce(buf: ByteArray, from: Int, len: Int, unitSize: Int): Int {
+fun resyncForce(
+    buf: ByteArray,
+    from: Int,
+    len: Int,
+    unitSize: Int,
+): Int {
     var pos = from
     while (pos < len - 188) {
         if (buf[pos] == SYNC_BYTE) {

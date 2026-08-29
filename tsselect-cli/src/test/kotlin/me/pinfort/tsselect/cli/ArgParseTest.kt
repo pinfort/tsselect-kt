@@ -5,7 +5,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class ArgParseTest {
-
     @Test
     fun parsesSourceDestinationAndPids() {
         val parsed = parseArgs(arrayOf("src.m2t", "dst.m2t", "0x1000", "0x1001"))!!

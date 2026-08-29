@@ -4,9 +4,10 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class SyncTest {
-
-    private fun packets(count: Int, size: Int): ByteArray =
-        stream(*Array(count) { tsPacket(pid = 0x100, cc = it and 0x0f, size = size) })
+    private fun packets(
+        count: Int,
+        size: Int,
+    ): ByteArray = stream(*Array(count) { tsPacket(pid = 0x100, cc = it and 0x0f, size = size) })
 
     @Test
     fun selectsUnitSize188() {

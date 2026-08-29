@@ -2,13 +2,16 @@ package me.pinfort.tsselect
 
 import java.util.Locale
 
-data class DropEntry(val pid: Int, val pos: Long)
+data class DropEntry(
+    val pid: Int,
+    val pos: Long,
+)
 
 data class ResyncEntry(
     val miss: Long,
     val sync: Long,
     val dropCount: Long,
-    val drops: List<DropEntry>
+    val drops: List<DropEntry>,
 )
 
 data class PidReport(
@@ -17,13 +20,13 @@ data class PidReport(
     val drop: Long,
     val error: Long,
     val scrambling: Long,
-    val firstOffset: Long
+    val firstOffset: Long,
 )
 
 data class TsDumpReport(
     val resyncCount: Int,
     val resyncEntries: List<ResyncEntry>,
-    val pids: List<PidReport>
+    val pids: List<PidReport>,
 )
 
 // Renders the report exactly as the C tsselect prints it. Returns the text
@@ -36,14 +39,21 @@ fun TsDumpReport.format(): String {
         for ((i, entry) in resyncEntries.withIndex()) {
             sb.append(
                 "  resync[%d] : miss=0x%012x, sync=0x%012x, drop=%d\n".format(
-                    Locale.ROOT, i, entry.miss, entry.sync, entry.dropCount
-                )
+                    Locale.ROOT,
+                    i,
+                    entry.miss,
+                    entry.sync,
+                    entry.dropCount,
+                ),
             )
             for ((j, drop) in entry.drops.withIndex()) {
                 sb.append(
                     "    drop[%d] : pid=0x%04x, pos=0x%012x\n".format(
-                        Locale.ROOT, j, drop.pid, drop.pos
-                    )
+                        Locale.ROOT,
+                        j,
+                        drop.pid,
+                        drop.pos,
+                    ),
                 )
             }
         }
@@ -52,9 +62,14 @@ fun TsDumpReport.format(): String {
     for (pid in pids) {
         sb.append(
             "pid=0x%04x, total=%8d, d=%3d, e=%3d, scrambling=%d, offset=%d\n".format(
-                Locale.ROOT, pid.pid, pid.total, pid.drop, pid.error,
-                pid.scrambling, pid.firstOffset
-            )
+                Locale.ROOT,
+                pid.pid,
+                pid.total,
+                pid.drop,
+                pid.error,
+                pid.scrambling,
+                pid.firstOffset,
+            ),
         )
     }
 

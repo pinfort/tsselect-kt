@@ -7,8 +7,10 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class TsDumpIntegrationTest {
-
-    private fun tempFile(name: String, content: ByteArray): File {
+    private fun tempFile(
+        name: String,
+        content: ByteArray,
+    ): File {
         val dir = File("build/test-tmp")
         dir.mkdirs()
         val file = File(dir, name)
@@ -29,7 +31,7 @@ class TsDumpIntegrationTest {
 
         assertEquals(
             "pid=0x0100, total=      12, d=  0, e=  0, scrambling=0, offset=0\n",
-            dumpReport(file)
+            dumpReport(file),
         )
     }
 
@@ -45,7 +47,7 @@ class TsDumpIntegrationTest {
         assertEquals(
             "pid=0x0100, total=      10, d=  0, e=  0, scrambling=0, offset=0\n" +
                 "pid=0x0101, total=      10, d=  0, e=  0, scrambling=0, offset=188\n",
-            dumpReport(file)
+            dumpReport(file),
         )
     }
 
@@ -57,7 +59,7 @@ class TsDumpIntegrationTest {
 
         assertEquals(
             "pid=0x0100, total=      12, d=  1, e=  0, scrambling=0, offset=0\n",
-            dumpReport(file)
+            dumpReport(file),
         )
     }
 

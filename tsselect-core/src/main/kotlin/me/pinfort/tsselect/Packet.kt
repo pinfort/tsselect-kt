@@ -2,7 +2,10 @@ package me.pinfort.tsselect
 
 private fun ByteArray.at(i: Int): Int = this[i].toInt() and 0xff
 
-fun TsHeader.parse(buf: ByteArray, off: Int) {
+fun TsHeader.parse(
+    buf: ByteArray,
+    off: Int,
+) {
     sync = buf.at(off)
     transportErrorIndicator = (buf.at(off + 1) shr 7) and 0x01
     payloadUnitStartIndicator = (buf.at(off + 1) shr 6) and 0x01
@@ -15,7 +18,10 @@ fun TsHeader.parse(buf: ByteArray, off: Int) {
 
 // Port of extract_adaptation_field: any malformed field zeroes the whole
 // struct and returns, exactly like the C original.
-fun AdaptationField.parse(buf: ByteArray, off: Int) {
+fun AdaptationField.parse(
+    buf: ByteArray,
+    off: Int,
+) {
     clear()
     val length = buf.at(off)
     if (length == 0 || length > 183) {

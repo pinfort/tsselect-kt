@@ -4,10 +4,12 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class DropLogicTest {
-
     private val pid = 0x100
 
-    private fun feed(dump: TsDump, vararg packets: ByteArray) {
+    private fun feed(
+        dump: TsDump,
+        vararg packets: ByteArray,
+    ) {
         packets.forEachIndexed { i, p ->
             dump.processPacket(p, 0, 188L * i)
         }

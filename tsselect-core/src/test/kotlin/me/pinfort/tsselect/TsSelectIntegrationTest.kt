@@ -8,7 +8,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class TsSelectIntegrationTest {
-
     private fun tempFile(name: String): File {
         val dir = File("build/test-tmp")
         dir.mkdirs()
@@ -106,19 +105,26 @@ class TsSelectIntegrationTest {
         val bytes = stream(*packets)
         var finished = false
         var lastProcessed = -1L
-        val listener = object : ProgressListener {
-            override fun onProgress(processed: Long, total: Long) {
-                lastProcessed = processed
-            }
+        val listener =
+            object : ProgressListener {
+                override fun onProgress(
+                    processed: Long,
+                    total: Long,
+                ) {
+                    lastProcessed = processed
+                }
 
-            override fun onFinish() {
-                finished = true
+                override fun onFinish() {
+                    finished = true
+                }
             }
-        }
 
         tsSelect(
-            ByteArrayInputStream(bytes), ByteArrayOutputStream(), bytes.size.toLong(),
-            pidMapOf(listOf(0x100)), listener
+            ByteArrayInputStream(bytes),
+            ByteArrayOutputStream(),
+            bytes.size.toLong(),
+            pidMapOf(listOf(0x100)),
+            listener,
         )
 
         assertEquals(true, finished)

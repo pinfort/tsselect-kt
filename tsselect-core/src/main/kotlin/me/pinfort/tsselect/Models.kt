@@ -1,6 +1,8 @@
 package me.pinfort.tsselect
 
-class TsStatus(val pid: Int) {
+class TsStatus(
+    val pid: Int,
+) {
     var lastContinuityCounter: Int = -1
     var first: Long = -1
     var total: Long = 0

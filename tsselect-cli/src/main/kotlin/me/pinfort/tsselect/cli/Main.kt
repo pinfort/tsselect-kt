@@ -49,19 +49,21 @@ private fun runDump(src: String) {
 
 private fun runSelect(parsed: ParsedArgs) {
     val srcFile = File(parsed.src)
-    val input = try {
-        FileInputStream(srcFile)
-    } catch (_: IOException) {
-        System.err.print("error - failed on open(%s) [src]\n".format(Locale.ROOT, parsed.src))
-        return
-    }
-    input.use { ins ->
-        val output = try {
-            BufferedOutputStream(FileOutputStream(parsed.dst), 65536)
+    val input =
+        try {
+            FileInputStream(srcFile)
         } catch (_: IOException) {
-            System.err.print("error - failed on open(%s) [dst]\n".format(Locale.ROOT, parsed.dst))
+            System.err.print("error - failed on open(%s) [src]\n".format(Locale.ROOT, parsed.src))
             return
         }
+    input.use { ins ->
+        val output =
+            try {
+                BufferedOutputStream(FileOutputStream(parsed.dst), 65536)
+            } catch (_: IOException) {
+                System.err.print("error - failed on open(%s) [dst]\n".format(Locale.ROOT, parsed.dst))
+                return
+            }
         try {
             tsSelect(ins, output, srcFile.length(), parsed.pidMap, StderrProgressListener())
         } catch (_: TsFormatException) {
@@ -79,7 +81,11 @@ private fun runSelect(parsed: ParsedArgs) {
     }
 }
 
-class ParsedArgs(val src: String, val dst: String, val pidMap: ByteArray)
+class ParsedArgs(
+    val src: String,
+    val dst: String,
+    val pidMap: ByteArray,
+)
 
 // Port of the argv loop: args[0]=src, args[1]=dst, the rest are PIDs in
 // strtol(.., 0) notation plus an optional -x/-X to invert the selection.
@@ -170,12 +176,16 @@ fun strtolBase0(s: String): Int {
     return if (negative) -v else v
 }
 
-private fun digitValue(c: Char, base: Int): Int {
-    val d = when (c) {
-        in '0'..'9' -> c - '0'
-        in 'a'..'z' -> c - 'a' + 10
-        in 'A'..'Z' -> c - 'A' + 10
-        else -> return -1
-    }
+private fun digitValue(
+    c: Char,
+    base: Int,
+): Int {
+    val d =
+        when (c) {
+            in '0'..'9' -> c - '0'
+            in 'a'..'z' -> c - 'a' + 10
+            in 'A'..'Z' -> c - 'A' + 10
+            else -> return -1
+        }
     return if (d < base) d else -1
 }
