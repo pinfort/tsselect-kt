@@ -3,5 +3,4 @@ plugins {
 }
 rootProject.name = "tsselect"
 
-include(":tsselect-core")
-include(":tsselect-cli")
+include(":tsselect-core", ":tsselect-cli")
