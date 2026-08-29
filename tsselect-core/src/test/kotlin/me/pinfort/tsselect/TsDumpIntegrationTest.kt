@@ -19,11 +19,7 @@ class TsDumpIntegrationTest :
             return file
         }
 
-        fun dumpReport(file: File): String {
-            val dump = TsDump()
-            dump.dump(file)
-            return dump.report().format()
-        }
+        fun dumpReport(file: File): String = tsDump(file).format()
 
         "dumps clean single pid stream" {
             val packets = Array(12) { tsPacket(pid = 0x100, cc = it and 0x0f) }
@@ -55,25 +51,26 @@ class TsDumpIntegrationTest :
                 "pid=0x0100, total=      12, d=  1, e=  0, scrambling=0, offset=0\n"
         }
 
-        "missing file throws" {
-            shouldThrow<FileNotFoundException> {
-                TsDump().dump(File("build/test-tmp/does-not-exist.ts"))
-            }
+        "missing file throws a source open exception carrying the path" {
+            val path = "build/test-tmp/does-not-exist.ts"
+
+            val e = shouldThrow<TsSourceOpenException> { tsDump(File(path)) }
+
+            e.path shouldBe path
+            (e.cause is FileNotFoundException) shouldBe true
         }
 
         "non ts input throws ts format exception" {
             val file = tempFile("garbage.bin", ByteArray(4096))
 
-            shouldThrow<TsFormatException> { TsDump().dump(file) }
+            shouldThrow<TsFormatException> { tsDump(file) }
         }
 
         "report exposes stats without formatting" {
             val packets = Array(12) { tsPacket(pid = 0x1fc8, cc = it and 0x0f) }
             val file = tempFile("model.ts", stream(*packets))
 
-            val dump = TsDump()
-            dump.dump(file)
-            val report = dump.report()
+            val report = tsDump(file)
 
             report.resyncCount shouldBe 0
             report.pids shouldBe listOf(PidReport(0x1fc8, 12, 0, 0, 0, 0))

@@ -1,9 +1,9 @@
-package me.pinfort.tsselect.cli
+package me.pinfort.tsselect
 
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 
-class MainArgsTest :
+class StrtolTest :
     StringSpec({
         "parses hex with prefix" {
             strtolBase0("0x1000") shouldBe 0x1000

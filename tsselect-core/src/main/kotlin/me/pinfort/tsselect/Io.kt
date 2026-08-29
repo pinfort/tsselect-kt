@@ -6,7 +6,7 @@ import java.io.InputStream
 // C's _read on a regular file fills the whole buffer; InputStream.read may
 // return short reads, so loop until the requested range is full or EOF.
 // A read error is treated like EOF (C breaks the chunk loop on _read < 1).
-fun readFully(
+internal fun readFully(
     input: InputStream,
     buf: ByteArray,
     off: Int,

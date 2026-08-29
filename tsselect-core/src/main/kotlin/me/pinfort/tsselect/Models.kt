@@ -1,6 +1,6 @@
 package me.pinfort.tsselect
 
-class TsStatus(
+internal class TsStatus(
     val pid: Int,
 ) {
     var lastContinuityCounter: Int = -1
@@ -13,7 +13,7 @@ class TsStatus(
     var duplicateCount: Int = 0
 }
 
-class ResyncReport {
+internal class ResyncReport {
     var miss: Long = 0
     var sync: Long = 0
     var dropCount: Long = 0
@@ -21,7 +21,7 @@ class ResyncReport {
     val dropPos = LongArray(4)
 }
 
-class TsHeader {
+internal class TsHeader {
     var sync: Int = 0
     var transportErrorIndicator: Int = 0
     var payloadUnitStartIndicator: Int = 0
@@ -32,7 +32,7 @@ class TsHeader {
     var continuityCounter: Int = 0
 }
 
-class AdaptationField {
+internal class AdaptationField {
     var adaptationFieldLength: Int = 0
 
     // The C source calls this field discontinuity_counter, but it holds the

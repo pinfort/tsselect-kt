@@ -2,19 +2,19 @@ package me.pinfort.tsselect
 
 import java.util.Locale
 
-data class DropEntry(
+public data class DropEntry(
     val pid: Int,
     val pos: Long,
 )
 
-data class ResyncEntry(
+public data class ResyncEntry(
     val miss: Long,
     val sync: Long,
     val dropCount: Long,
     val drops: List<DropEntry>,
 )
 
-data class PidReport(
+public data class PidReport(
     val pid: Int,
     val total: Long,
     val drop: Long,
@@ -23,7 +23,7 @@ data class PidReport(
     val firstOffset: Long,
 )
 
-data class TsDumpReport(
+public data class TsDumpReport(
     val resyncCount: Int,
     val resyncEntries: List<ResyncEntry>,
     val pids: List<PidReport>,
@@ -31,7 +31,7 @@ data class TsDumpReport(
 
 // Renders the report exactly as the C tsselect prints it. Returns the text
 // instead of writing it, so the library stays free of any output stream.
-fun TsDumpReport.format(): String {
+public fun TsDumpReport.format(): String {
     val sb = StringBuilder()
 
     if (resyncCount > 0) {

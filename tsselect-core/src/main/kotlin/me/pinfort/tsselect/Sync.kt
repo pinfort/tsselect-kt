@@ -1,10 +1,10 @@
 package me.pinfort.tsselect
 
-const val SYNC_BYTE: Byte = 0x47
+internal const val SYNC_BYTE: Byte = 0x47
 
 // Port of select_unit_size: histogram of 0x47-to-0x47 strides in [188, 320),
 // returns the most frequent one, or 0 when the buffer does not validate.
-fun selectUnitSize(
+internal fun selectUnitSize(
     buf: ByteArray,
     len: Int,
 ): Int {
@@ -50,7 +50,7 @@ fun selectUnitSize(
 
 // Port of resync: find 8 consecutive sync bytes at unit_size stride.
 // Returns the index of the recovered sync position, or -1.
-fun resync(
+internal fun resync(
     buf: ByteArray,
     from: Int,
     len: Int,
@@ -78,7 +78,7 @@ fun resync(
 
 // Port of resync_force: relaxed variant for the buffer tail — every remaining
 // unit_size stride position must be a sync byte.
-fun resyncForce(
+internal fun resyncForce(
     buf: ByteArray,
     from: Int,
     len: Int,
