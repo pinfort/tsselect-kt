@@ -1,4 +1,4 @@
-package me.pinfort.tsselect
+package me.pinfort.tsselect.cli
 
 import kotlin.test.Test
 import kotlin.test.assertEquals

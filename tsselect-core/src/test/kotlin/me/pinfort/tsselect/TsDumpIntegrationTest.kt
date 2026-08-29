@@ -1,10 +1,10 @@
 package me.pinfort.tsselect
 
-import java.io.ByteArrayOutputStream
 import java.io.File
-import java.io.PrintStream
+import java.io.FileNotFoundException
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class TsDumpIntegrationTest {
 
@@ -16,16 +16,10 @@ class TsDumpIntegrationTest {
         return file
     }
 
-    private fun captureStdout(block: () -> Unit): String {
-        val original = System.out
-        val bout = ByteArrayOutputStream()
-        System.setOut(PrintStream(bout, true, Charsets.UTF_8))
-        try {
-            block()
-        } finally {
-            System.setOut(original)
-        }
-        return bout.toString(Charsets.UTF_8)
+    private fun dumpReport(file: File): String {
+        val dump = TsDump()
+        dump.dump(file)
+        return dump.report().format()
     }
 
     @Test
@@ -33,9 +27,10 @@ class TsDumpIntegrationTest {
         val packets = Array(12) { tsPacket(pid = 0x100, cc = it and 0x0f) }
         val file = tempFile("clean.ts", stream(*packets))
 
-        val out = captureStdout { TsDump().run(file.path) }
-
-        assertEquals("pid=0x0100, total=      12, d=  0, e=  0, scrambling=0, offset=0\n", out)
+        assertEquals(
+            "pid=0x0100, total=      12, d=  0, e=  0, scrambling=0, offset=0\n",
+            dumpReport(file)
+        )
     }
 
     @Test
@@ -47,12 +42,10 @@ class TsDumpIntegrationTest {
         }
         val file = tempFile("interleaved.ts", stream(*packets.toTypedArray()))
 
-        val out = captureStdout { TsDump().run(file.path) }
-
         assertEquals(
             "pid=0x0100, total=      10, d=  0, e=  0, scrambling=0, offset=0\n" +
                 "pid=0x0101, total=      10, d=  0, e=  0, scrambling=0, offset=188\n",
-            out
+            dumpReport(file)
         )
     }
 
@@ -62,14 +55,36 @@ class TsDumpIntegrationTest {
         val packets = ccs.map { tsPacket(pid = 0x100, cc = it) }
         val file = tempFile("gap.ts", stream(*packets.toTypedArray()))
 
-        val out = captureStdout { TsDump().run(file.path) }
-
-        assertEquals("pid=0x0100, total=      12, d=  1, e=  0, scrambling=0, offset=0\n", out)
+        assertEquals(
+            "pid=0x0100, total=      12, d=  1, e=  0, scrambling=0, offset=0\n",
+            dumpReport(file)
+        )
     }
 
     @Test
-    fun missingFilePrintsNothingToStdout() {
-        val out = captureStdout { TsDump().run("build/test-tmp/does-not-exist.ts") }
-        assertEquals("", out)
+    fun missingFileThrows() {
+        assertFailsWith<FileNotFoundException> {
+            TsDump().dump(File("build/test-tmp/does-not-exist.ts"))
+        }
+    }
+
+    @Test
+    fun nonTsInputThrowsTsFormatException() {
+        val file = tempFile("garbage.bin", ByteArray(4096))
+
+        assertFailsWith<TsFormatException> { TsDump().dump(file) }
+    }
+
+    @Test
+    fun reportExposesStatsWithoutFormatting() {
+        val packets = Array(12) { tsPacket(pid = 0x1fc8, cc = it and 0x0f) }
+        val file = tempFile("model.ts", stream(*packets))
+
+        val dump = TsDump()
+        dump.dump(file)
+        val report = dump.report()
+
+        assertEquals(0, report.resyncCount)
+        assertEquals(listOf(PidReport(0x1fc8, 12, 0, 0, 0, 0)), report.pids)
     }
 }
