@@ -1,0 +1,56 @@
+tsselect (Kotlin port)
+Copyright (c) 2026 pinfort
+
+This product is a Kotlin/JVM port — a 二次的著作物 (derivative work) — of
+
+    tsselect ver. 0.1.8
+    Copyright 茂木和洋 (Mogi Kazuhiro)
+    http://www.marumo.ne.jp/junk/tsselect-0.1.8.lzh
+
+The MIT license in LICENSE applies to the Kotlin source, tests, and build
+files in this repository. It does not relicense the original C source
+(`tsselect.c`), which is not distributed here and remains under the terms
+below.
+
+--------------------------------------------------------------------------
+Original terms
+--------------------------------------------------------------------------
+
+Quoted verbatim from the original `readme.txt`; the headings are
+「二次配布等に関して」 and 「ソースコードの利用に関して」:
+
+  オリジナルに改変を加えない場合であれば、その目的・手段を問わず複製・公衆再送信
+  を許可します
+
+  ・ソースコードの利用によってプログラムにバグが混入しても茂木和洋は責任を負わない
+  ・ソースコードの利用によって特許関連のトラブルが発生しても茂木和洋は責任を負わない
+
+  上記２条件に同意して作成された二次的著作物に対して、原著作者に与えられる諸権利は
+  行使しません
+
+In summary: redistribution of the unmodified original is permitted regardless
+of purpose or means; use of the source code is granted on two conditions — that
+the original author bears no responsibility for bugs introduced into your
+program by using the source, and none for any patent-related trouble arising
+from it — and for derivative works created in agreement with those two
+conditions, the author does not exercise the rights he holds as the original
+author. This port is such a derivative work, published in agreement with those
+conditions.
+
+--------------------------------------------------------------------------
+Conditions carried forward
+--------------------------------------------------------------------------
+
+Anyone using this port, in whole or in part, is asked to acknowledge the same
+two conditions:
+
+  1. 茂木和洋 bears no responsibility for any bug introduced into your program
+     through the use of this code. (The MIT warranty disclaimer in LICENSE
+     covers this for the port as well.)
+  2. 茂木和洋 bears no responsibility for any patent-related trouble arising
+     from the use of this code. LICENSE grants no patent rights, express or
+     implied.
+
+Attribution to 茂木和洋 as the original author should be retained: moral rights
+(著作者人格権) under Japanese copyright law are not transferable and are not
+affected by the MIT license.
