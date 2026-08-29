@@ -52,8 +52,38 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Test
-        run: ./gradlew --no-daemon test
+      - name: Test with coverage
+        run: ./gradlew --no-daemon test koverXmlReport koverHtmlReport
+
+      - name: Coverage summary
+        if: ${{ !cancelled() }}
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import xml.etree.ElementTree as ET, pathlib, sys
+          p = pathlib.Path("build/reports/kover/report.xml")
+          if not p.exists():
+              print("No coverage report was generated."); sys.exit(0)
+          counters = {c.get("type"): (int(c.get("covered")), int(c.get("missed")))
+                      for c in ET.parse(p).getroot().findall("counter")}
+          print("## Coverage\n")
+          print("| Metric | Covered | Total | % |")
+          print("|--------|--------:|------:|--:|")
+          for t in ("LINE", "BRANCH", "INSTRUCTION", "METHOD", "CLASS"):
+              if t not in counters:
+                  continue
+              covered, missed = counters[t]
+              total = covered + missed
+              pct = 100.0 * covered / total if total else 100.0
+              print(f"| {t.title()} | {covered} | {total} | {pct:.2f}% |")
+          PY
+
+      - name: Upload coverage report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: build/reports/kover/
+          if-no-files-found: warn
 
       - name: Upload test reports
         if: failure()

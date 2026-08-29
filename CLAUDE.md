@@ -18,6 +18,9 @@ Many comments in the Kotlin code cite line numbers in `tsselect.c`.
 ./gradlew ktlintCheck           # lint
 ./gradlew ktlintFormat          # autoformat (kotlin.code.style=official)
 
+# aggregated coverage (Kover) -> build/reports/kover/{report.xml,html/}
+./gradlew koverHtmlReport koverXmlReport
+
 # single test class / method
 ./gradlew :tsselect-core:test --tests 'me.pinfort.tsselect.SyncTest'
 ./gradlew :tsselect-core:test --tests '*.TsDumpIntegrationTest.dumpsCleanSinglePidStream'
@@ -95,7 +98,13 @@ nothing depends on the large `test.m2ts` at the repo root (a local sample, gitig
 ## CI
 
 `.github/workflows/ci.yml` runs `ktlintCheck` and `test` as separate jobs on pushes to `main`
-and on PRs.
+and on PRs. The `test` job also generates the Kover coverage report, writes a summary table to
+the job summary, and uploads `build/reports/kover/` as the `coverage-report` artifact.
+
+Kover is applied to each module (`org.jetbrains.kotlinx.kover`) and aggregated by the root
+project via `kover(project(...))` dependencies. All repositories are declared once in
+`settings.gradle.kts` under `dependencyResolutionManagement` (`FAIL_ON_PROJECT_REPOS`), so no
+build script has its own `repositories {}` block.
 
 ## Environment gotchas
 

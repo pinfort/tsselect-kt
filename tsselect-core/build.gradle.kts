@@ -2,10 +2,7 @@ plugins {
     kotlin("jvm")
     `maven-publish`
     id("org.jlleitschuh.gradle.ktlint")
-}
-
-repositories {
-    mavenCentral()
+    id("org.jetbrains.kotlinx.kover")
 }
 
 dependencies {
