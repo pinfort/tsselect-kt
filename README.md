@@ -134,6 +134,11 @@ Requires a JDK 25 toolchain (Gradle provisions it via the foojay resolver).
 
 ## Credits and license
 
+This port is released under the [MIT License](LICENSE). MIT covers the Kotlin source,
+tests, and build files in this repository; it does not relicense the original C source,
+which is not distributed here. See [NOTICE](NOTICE) for the original terms and the two
+conditions they carry.
+
 This is a Kotlin port of `tsselect` ver. 0.1.8 by **茂木和洋 (Mogi Kazuhiro)**, originally
 distributed at <http://www.marumo.ne.jp/junk/tsselect-0.1.8.lzh>.
 

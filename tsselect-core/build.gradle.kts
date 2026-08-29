@@ -37,9 +37,13 @@ publishing {
                 url.set("https://github.com/pinfort/tsselect-kt")
                 licenses {
                     license {
-                        name.set("tsselect original terms (Mogi Kazuhiro)")
-                        url.set("https://github.com/pinfort/tsselect-kt/blob/main/README.md#credits-and-license")
+                        name.set("MIT License")
+                        url.set("https://opensource.org/licenses/MIT")
                         distribution.set("repo")
+                        comments.set(
+                            "MIT applies to this Kotlin port. It is a derivative work of tsselect 0.1.8 " +
+                                "by Mogi Kazuhiro; see NOTICE for the original terms.",
+                        )
                     }
                 }
                 developers {
