@@ -86,9 +86,11 @@ Two modules, one build:
 
 ## Tests
 
-JUnit 5 (`kotlin("test")` + `useJUnitPlatform()`). Unit tests plus `*IntegrationTest` classes,
-all driven by synthetic packets from `tsPacket` / `stream` in `TsTestData.kt`. Nothing depends
-on the large `test.m2ts` at the repo root (a local sample, gitignored).
+[Kotest](https://kotest.io) `StringSpec` on the JUnit 5 platform (`kotest-runner-junit5` +
+`kotest-assertions-core`, `useJUnitPlatform()`). One spec class per source file, plus
+`*IntegrationTest` specs; shared helpers (`tempFile`, `feed`, …) are locals inside the spec
+lambda. All fixtures are synthetic packets from `tsPacket` / `stream` in `TsTestData.kt` —
+nothing depends on the large `test.m2ts` at the repo root (a local sample, gitignored).
 
 ## CI
 

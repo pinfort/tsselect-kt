@@ -1,42 +1,37 @@
 package me.pinfort.tsselect.cli
 
-import kotlin.test.Test
-import kotlin.test.assertEquals
+import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
 
-class MainArgsTest {
-    @Test
-    fun parsesHexWithPrefix() {
-        assertEquals(0x1000, strtolBase0("0x1000"))
-        assertEquals(0x12, strtolBase0("0X12"))
-    }
+class MainArgsTest :
+    StringSpec({
+        "parses hex with prefix" {
+            strtolBase0("0x1000") shouldBe 0x1000
+            strtolBase0("0X12") shouldBe 0x12
+        }
 
-    @Test
-    fun parsesOctalWithLeadingZero() {
-        assertEquals(8, strtolBase0("010"))
-        assertEquals(0, strtolBase0("0"))
-    }
+        "parses octal with leading zero" {
+            strtolBase0("010") shouldBe 8
+            strtolBase0("0") shouldBe 0
+        }
 
-    @Test
-    fun parsesDecimal() {
-        assertEquals(8191, strtolBase0("8191"))
-        assertEquals(0, strtolBase0("0x"))
-    }
+        "parses decimal" {
+            strtolBase0("8191") shouldBe 8191
+            strtolBase0("0x") shouldBe 0
+        }
 
-    @Test
-    fun invalidInputYieldsZeroLikeStrtol() {
-        assertEquals(0, strtolBase0("junk"))
-        assertEquals(0, strtolBase0(""))
-    }
+        "invalid input yields zero like strtol" {
+            strtolBase0("junk") shouldBe 0
+            strtolBase0("") shouldBe 0
+        }
 
-    @Test
-    fun parsesLongestValidPrefix() {
-        assertEquals(123, strtolBase0("123abc"))
-        assertEquals(0x1f, strtolBase0("0x1fzz"))
-    }
+        "parses longest valid prefix" {
+            strtolBase0("123abc") shouldBe 123
+            strtolBase0("0x1fzz") shouldBe 0x1f
+        }
 
-    @Test
-    fun parsesSignAndWhitespace() {
-        assertEquals(-5, strtolBase0(" -5"))
-        assertEquals(7, strtolBase0("+7"))
-    }
-}
+        "parses sign and whitespace" {
+            strtolBase0(" -5") shouldBe -5
+            strtolBase0("+7") shouldBe 7
+        }
+    })

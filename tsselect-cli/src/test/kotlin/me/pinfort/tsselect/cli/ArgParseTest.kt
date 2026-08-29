@@ -1,55 +1,49 @@
 package me.pinfort.tsselect.cli
 
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNull
+import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
 
-class ArgParseTest {
-    @Test
-    fun parsesSourceDestinationAndPids() {
-        val parsed = parseArgs(arrayOf("src.m2t", "dst.m2t", "0x1000", "0x1001"))!!
+class ArgParseTest :
+    StringSpec({
+        "parses source, destination and pids" {
+            val parsed = parseArgs(arrayOf("src.m2t", "dst.m2t", "0x1000", "0x1001"))!!
 
-        assertEquals("src.m2t", parsed.src)
-        assertEquals("dst.m2t", parsed.dst)
-        assertEquals(1, parsed.pidMap[0x1000].toInt())
-        assertEquals(1, parsed.pidMap[0x1001].toInt())
-        assertEquals(2, parsed.pidMap.count { it.toInt() != 0 })
-    }
+            parsed.src shouldBe "src.m2t"
+            parsed.dst shouldBe "dst.m2t"
+            parsed.pidMap[0x1000].toInt() shouldBe 1
+            parsed.pidMap[0x1001].toInt() shouldBe 1
+            parsed.pidMap.count { it.toInt() != 0 } shouldBe 2
+        }
 
-    @Test
-    fun excludeOptionInvertsTheMap() {
-        val parsed = parseArgs(arrayOf("src.m2t", "dst.m2t", "-x", "0x0012", "0x0014"))!!
+        "exclude option inverts the map" {
+            val parsed = parseArgs(arrayOf("src.m2t", "dst.m2t", "-x", "0x0012", "0x0014"))!!
 
-        assertEquals(0, parsed.pidMap[0x12].toInt())
-        assertEquals(0, parsed.pidMap[0x14].toInt())
-        assertEquals(1, parsed.pidMap[0x1000].toInt())
-    }
+            parsed.pidMap[0x12].toInt() shouldBe 0
+            parsed.pidMap[0x14].toInt() shouldBe 0
+            parsed.pidMap[0x1000].toInt() shouldBe 1
+        }
 
-    @Test
-    fun uppercaseExcludeOptionIsAccepted() {
-        val parsed = parseArgs(arrayOf("src.m2t", "dst.m2t", "-X", "0x0012"))!!
+        "uppercase exclude option is accepted" {
+            val parsed = parseArgs(arrayOf("src.m2t", "dst.m2t", "-X", "0x0012"))!!
 
-        assertEquals(0, parsed.pidMap[0x12].toInt())
-        assertEquals(1, parsed.pidMap[0x13].toInt())
-    }
+            parsed.pidMap[0x12].toInt() shouldBe 0
+            parsed.pidMap[0x13].toInt() shouldBe 1
+        }
 
-    @Test
-    fun outOfRangePidsAreIgnored() {
-        val parsed = parseArgs(arrayOf("src.m2t", "dst.m2t", "0x2000", "0x100"))!!
+        "out of range pids are ignored" {
+            val parsed = parseArgs(arrayOf("src.m2t", "dst.m2t", "0x2000", "0x100"))!!
 
-        assertEquals(1, parsed.pidMap.count { it.toInt() != 0 })
-        assertEquals(1, parsed.pidMap[0x100].toInt())
-    }
+            parsed.pidMap.count { it.toInt() != 0 } shouldBe 1
+            parsed.pidMap[0x100].toInt() shouldBe 1
+        }
 
-    @Test
-    fun invalidOptionIsRejected() {
-        assertNull(parseArgs(arrayOf("src.m2t", "dst.m2t", "-q", "0x100")))
-    }
+        "invalid option is rejected" {
+            parseArgs(arrayOf("src.m2t", "dst.m2t", "-q", "0x100")) shouldBe null
+        }
 
-    @Test
-    fun noPidsSelectsNothing() {
-        val parsed = parseArgs(arrayOf("src.m2t", "dst.m2t"))!!
+        "no pids selects nothing" {
+            val parsed = parseArgs(arrayOf("src.m2t", "dst.m2t"))!!
 
-        assertEquals(0, parsed.pidMap.count { it.toInt() != 0 })
-    }
-}
+            parsed.pidMap.count { it.toInt() != 0 } shouldBe 0
+        }
+    })
