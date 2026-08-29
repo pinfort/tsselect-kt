@@ -2,7 +2,7 @@ package me.pinfort.tsselect
 
 private fun ByteArray.at(i: Int): Int = this[i].toInt() and 0xff
 
-fun TsHeader.parse(
+internal fun TsHeader.parse(
     buf: ByteArray,
     off: Int,
 ) {
@@ -18,7 +18,7 @@ fun TsHeader.parse(
 
 // Port of extract_adaptation_field: any malformed field zeroes the whole
 // struct and returns, exactly like the C original.
-fun AdaptationField.parse(
+internal fun AdaptationField.parse(
     buf: ByteArray,
     off: Int,
 ) {

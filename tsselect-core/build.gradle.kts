@@ -12,6 +12,9 @@ dependencies {
 
 kotlin {
     jvmToolchain(25)
+    // The published surface is small and deliberate; make widening it a
+    // compile error rather than an oversight.
+    explicitApi()
 }
 
 java {

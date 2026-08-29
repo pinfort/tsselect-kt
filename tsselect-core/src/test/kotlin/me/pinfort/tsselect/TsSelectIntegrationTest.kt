@@ -6,6 +6,9 @@ import io.kotest.matchers.shouldBe
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.FileNotFoundException
+import java.io.IOException
+import java.io.OutputStream
 
 class TsSelectIntegrationTest :
     StringSpec({
@@ -25,10 +28,10 @@ class TsSelectIntegrationTest :
             src.writeBytes(stream(*packets.toTypedArray()))
             val dst = tempFile("select-dst.ts")
 
-            val pidMap = ByteArray(8192)
-            pidMap[0x100] = 1
-            tsSelect(src, dst, pidMap)
+            val result = tsSelect(src, dst, PidSelection.of(listOf(0x100)))
 
+            result.unitSize shouldBe 192
+            result.packetsWritten shouldBe 10
             val out = dst.readBytes()
             out.size shouldBe 10 * 188
             val header = TsHeader()
@@ -46,9 +49,9 @@ class TsSelectIntegrationTest :
             src.writeBytes(stream(*packets))
             val dst = tempFile("roundtrip-dst.ts")
 
-            val pidMap = ByteArray(8192) { 1 }
-            tsSelect(src, dst, pidMap)
+            val result = tsSelect(src, dst, PidSelection.ALL)
 
+            result.unitSize shouldBe 204
             val out = dst.readBytes()
             out.size shouldBe 15 * 188
             for (i in 0 until 15) {
@@ -65,15 +68,19 @@ class TsSelectIntegrationTest :
             val bytes = stream(*packets.toTypedArray())
             val out = ByteArrayOutputStream()
 
-            tsSelect(ByteArrayInputStream(bytes), out, bytes.size.toLong(), pidMapOf(listOf(0x101)))
+            val result =
+                tsSelect(ByteArrayInputStream(bytes), out, bytes.size.toLong(), PidSelection.of(listOf(0x101)))
 
-            val result = out.toByteArray()
-            result.size shouldBe 8 * 188
+            val result2 = out.toByteArray()
+            result2.size shouldBe 8 * 188
             val header = TsHeader()
             for (i in 0 until 8) {
-                header.parse(result, i * 188)
+                header.parse(result2, i * 188)
                 header.pid shouldBe 0x101
             }
+            result.unitSize shouldBe 188
+            result.packetsRead shouldBe 16
+            result.packetsWritten shouldBe 8
         }
 
         "exclude map drops only the listed pids" {
@@ -85,7 +92,12 @@ class TsSelectIntegrationTest :
             val bytes = stream(*packets.toTypedArray())
             val out = ByteArrayOutputStream()
 
-            tsSelect(ByteArrayInputStream(bytes), out, bytes.size.toLong(), pidMapOf(listOf(0x12), exclude = true))
+            tsSelect(
+                ByteArrayInputStream(bytes),
+                out,
+                bytes.size.toLong(),
+                PidSelection.of(listOf(0x12), exclude = true),
+            )
 
             val result = out.toByteArray()
             result.size shouldBe 6 * 188
@@ -96,42 +108,102 @@ class TsSelectIntegrationTest :
             }
         }
 
-        "reports progress and finish to the listener" {
-            val packets = Array(40) { tsPacket(pid = 0x100, cc = it and 0x0f) }
+        "reports every chunk in order and finishes exactly once" {
+            val packets = Array(200) { tsPacket(pid = 0x100, cc = it and 0x0f) }
             val bytes = stream(*packets)
-            var finished = false
-            var lastProcessed = -1L
-            val listener =
-                object : ProgressListener {
-                    override fun onProgress(
-                        processed: Long,
-                        total: Long,
-                    ) {
-                        lastProcessed = processed
-                    }
-
-                    override fun onFinish() {
-                        finished = true
-                    }
-                }
+            val seen = mutableListOf<Progress>()
 
             tsSelect(
                 ByteArrayInputStream(bytes),
                 ByteArrayOutputStream(),
                 bytes.size.toLong(),
-                pidMapOf(listOf(0x100)),
-                listener,
+                PidSelection.of(listOf(0x100)),
+                { seen += it },
             )
 
-            finished shouldBe true
-            (lastProcessed > 0) shouldBe true
+            val ongoing = seen.filter { !it.finished }
+            ongoing.map { it.chunkIndex } shouldBe ongoing.indices.toList()
+            (ongoing.size > 1) shouldBe true
+            seen.count { it.finished } shouldBe 1
+            seen.last().finished shouldBe true
+            (seen.last().bytesProcessed > 0) shouldBe true
+        }
+
+        "a format failure reports no finish event" {
+            val bytes = ByteArray(4096)
+            val seen = mutableListOf<Progress>()
+
+            shouldThrow<TsFormatException> {
+                tsSelect(
+                    ByteArrayInputStream(bytes),
+                    ByteArrayOutputStream(),
+                    bytes.size.toLong(),
+                    PidSelection.ALL,
+                    { seen += it },
+                )
+            }
+
+            seen.none { it.finished } shouldBe true
         }
 
         "non ts input throws ts format exception" {
             val bytes = ByteArray(4096)
 
             shouldThrow<TsFormatException> {
-                tsSelect(ByteArrayInputStream(bytes), ByteArrayOutputStream(), bytes.size.toLong(), ByteArray(8192))
+                tsSelect(ByteArrayInputStream(bytes), ByteArrayOutputStream(), bytes.size.toLong(), PidSelection.ALL)
             }
+        }
+
+        "a failing write throws a write exception and no finish event" {
+            val packets = Array(20) { tsPacket(pid = 0x100, cc = it and 0x0f) }
+            val bytes = stream(*packets)
+            val seen = mutableListOf<Progress>()
+            val failing =
+                object : OutputStream() {
+                    override fun write(b: Int) = throw IOException("boom")
+
+                    override fun write(
+                        b: ByteArray,
+                        off: Int,
+                        len: Int,
+                    ) = throw IOException("boom")
+                }
+
+            val e =
+                shouldThrow<TsWriteException> {
+                    tsSelect(
+                        ByteArrayInputStream(bytes),
+                        failing,
+                        bytes.size.toLong(),
+                        PidSelection.ALL,
+                        { seen += it },
+                    )
+                }
+
+            (e.cause is IOException) shouldBe true
+            seen.none { it.finished } shouldBe true
+        }
+
+        "a missing source leaves the destination untouched" {
+            val src = File("build/test-tmp/select-does-not-exist.ts")
+            val dst = tempFile("select-never-created.ts")
+            dst.delete()
+
+            val e = shouldThrow<TsSourceOpenException> { tsSelect(src, dst, PidSelection.ALL) }
+
+            e.path shouldBe src.path
+            (e.cause is FileNotFoundException) shouldBe true
+            dst.exists() shouldBe false
+        }
+
+        "an unopenable destination is reported as a destination failure" {
+            val src = tempFile("dst-fail-src.ts")
+            src.writeBytes(stream(*Array(12) { tsPacket(pid = 0x100, cc = it and 0x0f) }))
+            val dst = File("build/test-tmp/no-such-dir/out.ts")
+
+            val e = shouldThrow<TsDestinationOpenException> { tsSelect(src, dst, PidSelection.ALL) }
+
+            e.path shouldBe dst.path
+            (e.cause is FileNotFoundException) shouldBe true
         }
     })

@@ -71,42 +71,57 @@ repositories { mavenLocal() }
 dependencies { implementation("me.pinfort:tsselect:1.0-SNAPSHOT") }
 ```
 
-Analyzing a stream. `report()` hands back a data model; `format()` renders it in the
+Analyzing a stream. `tsDump` returns a data model; `format()` renders it in the
 C tool's exact output shape if you want that:
 
 ```kotlin
-val dump = TsDump()
-dump.dump(File("src.m2ts"))
+val report = tsDump(File("src.m2ts"))
 
-val report = dump.report()
 report.pids.forEach { println("pid ${it.pid}: ${it.total} packets, ${it.drop} drops") }
 println(report.format())   // the classic "pid=0x0100, total=..." lines
 ```
 
-Selecting PIDs. Both a file and a stream overload exist; the stream one never
-touches the filesystem:
+Selecting PIDs. `PidSelection` says which PIDs to keep; both a file and a stream
+overload exist, and the stream one never touches the filesystem:
 
 ```kotlin
 // keep two PIDs, writing 188-byte packets (192/204-byte trailers are stripped)
-tsSelect(File("src.m2ts"), File("dst.ts"), pidMapOf(listOf(0x1000, 0x1001)))
+val result = tsSelect(File("src.m2ts"), File("dst.ts"), PidSelection.of(listOf(0x1000, 0x1001)))
+println("${result.packetsWritten} of ${result.packetsRead} packets kept")
 
 // or drop EIT and TOT, in memory
 val out = ByteArrayOutputStream()
 File("src.m2ts").inputStream().use {
-    tsSelect(it, out, File("src.m2ts").length(), pidMapOf(listOf(0x0012, 0x0014), exclude = true))
+    tsSelect(it, out, File("src.m2ts").length(), PidSelection.of(listOf(0x0012, 0x0014), exclude = true))
 }
 ```
 
-Progress and errors are the caller's to handle. Pass a `ProgressListener` for
-long inputs, and expect exceptions rather than messages on stderr:
-`TsFormatException` when the input has no recognizable 188/192/204-byte packet
-grid, and plain `IOException`/`FileNotFoundException` for IO failures.
+`PidSelection.parse` accepts PID arguments written the way the C tool does —
+`0x1000` hex, `0400` octal, `4096` decimal — if you are building a command line
+of your own.
+
+Progress and errors are the caller's to handle. Every failure the library
+signals is a `TsException`, so a `when` over it is exhaustive:
+
+| Exception | Means |
+| --- | --- |
+| `TsSourceOpenException` | the source could not be opened; carries `path` |
+| `TsDestinationOpenException` | the destination could not be opened; carries `path` |
+| `TsFormatException` | the input has no 188/192/204-byte packet grid |
+| `TsWriteException` | a write to the destination failed |
+
+A read error is deliberately not among them: the library treats one as EOF,
+exactly as the C code treats `_read < 1`.
+
+Pass a `ProgressListener` for long inputs. It is fired once per input chunk and
+once more with `finished = true` at the end; a run that fails fires no finish
+event. Throttling is yours to do — `chunkIndex` is supplied so you need not know
+the library's buffer size:
 
 ```kotlin
-dump.dump(file, object : ProgressListener {
-    override fun onProgress(processed: Long, total: Long) = renderBar(processed, total)
-    override fun onFinish() = clearBar()
-})
+tsDump(file) { p ->
+    if (p.finished) clearBar() else if (p.chunkIndex % 16 == 0) renderBar(p.basisPoints)
+}
 ```
 
 ## Building
@@ -140,6 +155,10 @@ with those two conditions, the author does not exercise the rights he holds as t
 author. This port is such a derivative work, published in agreement with those conditions.
 
 The port reproduces the original's output format, drop/continuity accounting, and resync
-behavior deliberately — including its quirks. One difference from the original readme's
-sample output: the C source at 0.1.8 also prints an `offset=` field on each PID line, which
-that sample predates; this port matches the source, not the sample.
+behavior deliberately — including its quirks. Two differences from the original:
+
+- The original readme's sample output has no `offset=` field on the PID lines. The C source
+  at 0.1.8 does print one; this port matches the source, not the sample.
+- When the input size is unknown — a FIFO, `/dev/stdin`, a capture still growing — the C
+  tool divides by zero computing the progress percentage. This port reports 0% instead.
+  Unreachable for a regular file, since a zero-length one fails packet-grid detection first.

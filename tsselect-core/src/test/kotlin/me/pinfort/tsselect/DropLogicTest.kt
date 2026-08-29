@@ -8,7 +8,7 @@ class DropLogicTest :
         val pid = 0x100
 
         fun feed(
-            dump: TsDump,
+            dump: TsDumpEngine,
             vararg packets: ByteArray,
         ) {
             packets.forEachIndexed { i, p ->
@@ -17,26 +17,26 @@ class DropLogicTest :
         }
 
         "normal sequence has no drops" {
-            val dump = TsDump()
+            val dump = TsDumpEngine()
             feed(dump, tsPacket(pid, 0), tsPacket(pid, 1), tsPacket(pid, 2))
             dump.stats[pid].drop shouldBe 0L
             dump.stats[pid].total shouldBe 3L
         }
 
         "continuity gap counts one drop" {
-            val dump = TsDump()
+            val dump = TsDumpEngine()
             feed(dump, tsPacket(pid, 0), tsPacket(pid, 2))
             dump.stats[pid].drop shouldBe 1L
         }
 
         "continuity wraps from 15 to zero" {
-            val dump = TsDump()
+            val dump = TsDumpEngine()
             feed(dump, tsPacket(pid, 15), tsPacket(pid, 0))
             dump.stats[pid].drop shouldBe 0L
         }
 
         "single identical duplicate is not a drop" {
-            val dump = TsDump()
+            val dump = TsDumpEngine()
             val p = tsPacket(pid, 0)
             feed(dump, p, p)
             dump.stats[pid].drop shouldBe 0L
@@ -44,7 +44,7 @@ class DropLogicTest :
         }
 
         "second identical duplicate counts one drop" {
-            val dump = TsDump()
+            val dump = TsDumpEngine()
             val p = tsPacket(pid, 0)
             feed(dump, p, p, p)
             dump.stats[pid].drop shouldBe 1L
@@ -52,13 +52,13 @@ class DropLogicTest :
         }
 
         "same cc different payload counts one drop" {
-            val dump = TsDump()
+            val dump = TsDumpEngine()
             feed(dump, tsPacket(pid, 0, payloadFill = 0), tsPacket(pid, 0, payloadFill = 1))
             dump.stats[pid].drop shouldBe 1L
         }
 
         "duplicate count resets when cc advances" {
-            val dump = TsDump()
+            val dump = TsDumpEngine()
             val p = tsPacket(pid, 0)
             feed(dump, p, p, tsPacket(pid, 1), tsPacket(pid, 1))
             dump.stats[pid].drop shouldBe 0L
@@ -66,7 +66,7 @@ class DropLogicTest :
         }
 
         "discontinuity indicator suppresses drop check" {
-            val dump = TsDump()
+            val dump = TsDumpEngine()
             feed(
                 dump,
                 tsPacket(pid, 0),
@@ -76,14 +76,14 @@ class DropLogicTest :
         }
 
         "null packet pid never drops" {
-            val dump = TsDump()
+            val dump = TsDumpEngine()
             feed(dump, tsPacket(0x1fff, 0), tsPacket(0x1fff, 7))
             dump.stats[0x1fff].drop shouldBe 0L
             dump.stats[0x1fff].total shouldBe 2L
         }
 
         "no payload continuity change is a drop" {
-            val dump = TsDump()
+            val dump = TsDumpEngine()
             feed(
                 dump,
                 tsPacket(pid, 0, afc = 2, adaptation = byteArrayOf(1, 0)),
@@ -93,7 +93,7 @@ class DropLogicTest :
         }
 
         "no payload same continuity is not a drop" {
-            val dump = TsDump()
+            val dump = TsDumpEngine()
             feed(
                 dump,
                 tsPacket(pid, 0, afc = 2, adaptation = byteArrayOf(1, 0)),
@@ -103,7 +103,7 @@ class DropLogicTest :
         }
 
         "error and scrambling counters accumulate" {
-            val dump = TsDump()
+            val dump = TsDumpEngine()
             feed(
                 dump,
                 tsPacket(pid, 0, tei = true, scrambling = 2),
