@@ -34,7 +34,9 @@ Many comments in the Kotlin code cite line numbers in `tsselect.c`.
 ```
 
 Requires a JDK 25 toolchain; Gradle provisions it via the foojay resolver (needs network on
-first run). Gradle 9.6 via the wrapper.
+first run). Gradle 9.6 via the wrapper. `tsselect-core` is a published library, so it compiles
+with the JDK 25 toolchain but emits **Java 17 bytecode** (`jvmTarget` + `targetCompatibility`);
+`tsselect-cli` is an application and stays on 25.
 
 ## Architecture
 

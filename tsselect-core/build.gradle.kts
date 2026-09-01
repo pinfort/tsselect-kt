@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     kotlin("jvm")
     `maven-publish`
@@ -12,6 +14,13 @@ dependencies {
 
 kotlin {
     jvmToolchain(25)
+    // Compile with the JDK 25 toolchain but emit Java 17 bytecode: this is a
+    // published library, so it must not force consumers onto a newer JVM than
+    // they run. 17 is the oldest LTS still in wide use; targeting it covers
+    // consumers on 17, 21 and 25.
+    compilerOptions {
+        jvmTarget = JvmTarget.JVM_17
+    }
     // The published surface is small and deliberate; make widening it a
     // compile error rather than an oversight.
     explicitApi()
@@ -20,6 +29,9 @@ kotlin {
 java {
     withSourcesJar()
     withJavadocJar()
+    // Drives `org.gradle.jvm.version` in the published Gradle module metadata so
+    // consumers building on Java 17 resolve the artifact instead of being rejected.
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 tasks.test {
