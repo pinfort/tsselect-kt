@@ -11,7 +11,7 @@ public class PidSelection private constructor(
 
     // Bounds-checked so an out-of-range PID reads as unselected rather than
     // throwing from inside the per-packet loop.
-    public operator fun contains(pid: Int): Boolean = pid >= 0 && pid < PID_COUNT && map[pid].toInt() != 0
+    public operator fun contains(pid: Int): Boolean = pid in 0..<PID_COUNT && map[pid].toInt() != 0
 
     override fun equals(other: Any?): Boolean = this === other || (other is PidSelection && map.contentEquals(other.map))
 

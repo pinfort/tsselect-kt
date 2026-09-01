@@ -25,9 +25,7 @@ fun tsPacket(
     for (i in 4 until 188) {
         packet[i] = payloadFill
     }
-    if (adaptation != null) {
-        adaptation.copyInto(packet, 4)
-    }
+    adaptation?.copyInto(packet, 4)
     return packet
 }
 
