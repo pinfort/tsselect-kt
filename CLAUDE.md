@@ -34,7 +34,9 @@ Many comments in the Kotlin code cite line numbers in `tsselect.c`.
 ```
 
 Requires a JDK 25 toolchain; Gradle provisions it via the foojay resolver (needs network on
-first run). Gradle 9.6 via the wrapper.
+first run). Gradle 9.6 via the wrapper. `tsselect-core` is a published library, so it compiles
+with the JDK 25 toolchain but emits **Java 17 bytecode** (`jvmTarget` + `targetCompatibility`);
+`tsselect-cli` is an application and stays on 25.
 
 ## Architecture
 
@@ -130,9 +132,12 @@ nothing depends on the large `test.m2ts` at the repo root (a local sample, gitig
 
 ## CI
 
-`.github/workflows/ci.yml` runs `ktlintCheck` and `test` as separate jobs on pushes to `main`
-and on PRs. The `test` job also generates the Kover coverage report, writes a summary table to
-the job summary, and uploads `build/reports/kover/` as the `coverage-report` artifact.
+`.github/workflows/ci.yml` runs `ktlintCheck`, `test` and `bytecode` as separate jobs on pushes
+to `main` and on PRs. The `test` job also generates the Kover coverage report, writes a summary
+table to the job summary, and uploads `build/reports/kover/` as the `coverage-report` artifact.
+The `bytecode` job compiles `:tsselect-core` and asserts every `.class` file under
+`build/classes/kotlin/main` has class-file major version 61, so the "Java 17 bytecode" target
+stays enforced rather than only documented.
 
 Kover is applied to each module (`org.jetbrains.kotlinx.kover`) and aggregated by the root
 project via `kover(project(...))` dependencies. All repositories are declared once in

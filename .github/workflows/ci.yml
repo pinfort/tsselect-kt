@@ -92,3 +92,47 @@ jobs:
           name: test-reports
           path: '**/build/reports/tests/'
           if-no-files-found: ignore
+
+  bytecode:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Compile tsselect-core
+        run: ./gradlew --no-daemon :tsselect-core:compileKotlin
+
+      - name: Assert tsselect-core is Java 17 bytecode
+        run: |
+          python3 - <<'PY'
+          import pathlib, struct, sys
+
+          EXPECTED = 61  # class-file major version for Java 17
+          root = pathlib.Path("tsselect-core/build/classes/kotlin/main")
+          classes = sorted(root.rglob("*.class"))
+          if not classes:
+              sys.exit(f"No compiled classes found under {root}")
+
+          bad = []
+          for c in classes:
+              with c.open("rb") as f:
+                  magic, _minor, major = struct.unpack(">IHH", f.read(8))
+              if magic != 0xCAFEBABE:
+                  bad.append((c, f"not a class file (magic={magic:#x})"))
+              elif major != EXPECTED:
+                  bad.append((c, f"major version {major}, expected {EXPECTED}"))
+
+          for c, why in bad:
+              print(f"::error file={c}::{why}")
+          if bad:
+              sys.exit(f"{len(bad)} of {len(classes)} class file(s) are not Java 17 bytecode")
+          print(f"All {len(classes)} class files under {root} are Java 17 (major version {EXPECTED}).")
+          PY
