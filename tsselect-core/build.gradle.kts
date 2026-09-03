@@ -20,6 +20,12 @@ kotlin {
     // consumers on 17, 21 and 25.
     compilerOptions {
         jvmTarget = JvmTarget.JVM_17
+        // jvmTarget only sets the class-file version; it does not stop the JDK 25
+        // toolchain from resolving APIs that exist only on 18+. -Xjdk-release is
+        // the Kotlin equivalent of `javac --release`: it checks calls against the
+        // JDK 17 signature set, so a newer API is a compile error here rather than
+        // a NoSuchMethodError for a consumer on 17.
+        freeCompilerArgs.add("-Xjdk-release=17")
     }
     // The published surface is small and deliberate; make widening it a
     // compile error rather than an oversight.
