@@ -83,7 +83,7 @@ private fun errorMessage(
  * @property dst the destination path, taken verbatim from `args[1]`.
  * @property pids the parsed PID selection from `args[2..]`.
  */
-class ParsedArgs(
+data class ParsedArgs(
     val src: String,
     val dst: String,
     val pids: PidSelection,
@@ -104,9 +104,7 @@ fun parseArgs(args: Array<String>): ParsedArgs? {
     val tokens = ArrayList<String>()
     var exclude = false
 
-    for (i in 2 until args.size) {
-        val arg = args[i]
-
+    for (arg in args.drop(2)) {
         if (arg.startsWith("-")) {
             val c = if (arg.length > 1) arg[1] else ' '
             if (c == 'x' || c == 'X') {
@@ -125,16 +123,20 @@ fun parseArgs(args: Array<String>): ParsedArgs? {
 }
 
 private fun showUsage() {
-    System.err.print("tsselect - MPEG-2 TS stream(pid) selector ver. 0.1.8\n")
-    System.err.print("usage: tsselect src.m2t [dst.m2t pid  [more pid ..]]\n")
-    System.err.print("\n")
-    System.err.print("ex: dump \"src.m2t\" TS information\n")
-    System.err.print("  tsselect src.m2t\n")
-    System.err.print("\n")
-    System.err.print("ex: remux \"src.m2t\" to \"dst.m2t\" which contains pid=0x1000 and pid=0x1001\n")
-    System.err.print("  tsselect src.m2t dst.m2t 0x1000 0x1001\n")
-    System.err.print("\n")
-    System.err.print("ex: remux \"src.m2t\" to \"dst.m2t\" exclude pid=0x0012(EIT) pid=0x0014(TOT)\n")
-    System.err.print("  tsselect src.m2t dst.m2t -x 0x0012 0x0014\n")
-    System.err.print("\n")
+    System.err.print(
+        """
+        tsselect - MPEG-2 TS stream(pid) selector ver. 0.1.8
+        usage: tsselect src.m2t [dst.m2t pid  [more pid ..]]
+
+        ex: dump "src.m2t" TS information
+          tsselect src.m2t
+
+        ex: remux "src.m2t" to "dst.m2t" which contains pid=0x1000 and pid=0x1001
+          tsselect src.m2t dst.m2t 0x1000 0x1001
+
+        ex: remux "src.m2t" to "dst.m2t" exclude pid=0x0012(EIT) pid=0x0014(TOT)
+          tsselect src.m2t dst.m2t -x 0x0012 0x0014
+
+        """.trimIndent() + "\n",
+    )
 }

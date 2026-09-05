@@ -57,7 +57,7 @@ public class PidSelection private constructor(
             }
 
             if (exclude) {
-                for (i in 0 until PID_COUNT) {
+                map.indices.forEach { i ->
                     map[i] = if (map[i].toInt() == 0) 1 else 0
                 }
             }
