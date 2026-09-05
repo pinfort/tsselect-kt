@@ -18,6 +18,20 @@ internal fun TsHeader.parse(
 
 // Port of extract_adaptation_field: any malformed field zeroes the whole
 // struct and returns, exactly like the C original.
+//
+// PCR/OPCR field layout (ISO/IEC 13818-1): each packs a 33-bit base (90kHz
+// clock) and a 9-bit extension (27MHz clock; PCR = base*300 + extension)
+// into 6 bytes where the sub-fields are not byte-aligned - the base's low
+// bit and the extension both live inside a shared byte alongside
+// reserved/marker bits. The parsing below builds the 33-bit base by
+// combining 4 whole bytes with one more bit pulled out of the 5th byte, then
+// shifts left again to make room for the extension bits, which are pulled
+// out of that same 5th byte plus the 6th. The exact bit positions this
+// reproduces are the C source's; kept as-is rather than rewritten against
+// the spec's field names, since the two are worth cross-checking against
+// each other, not merged. dtsNextAu (below, in the seamless_splice branch)
+// is structurally different - a plain 33-bit timestamp chunked by marker
+// bits into three pieces, with no separate extension clock.
 internal fun AdaptationField.parse(
     buf: ByteArray,
     off: Int,
@@ -137,6 +151,10 @@ internal fun AdaptationField.parse(
                 return
             }
             spliceType = (buf.at(p) shr 4) and 0x0f
+            // DTS_next_AU: a single 33-bit timestamp split into 3/15/15-bit
+            // chunks by marker bits (unlike PCR/OPCR above, there is no
+            // separate extension clock here) - reassembled by shifting each
+            // chunk into place as it's read.
             var dts = (((buf.at(p) and 0x0e) shl 14) or (buf.at(p + 1) shl 7) or ((buf.at(p + 2) shr 1) and 0x7f)).toLong()
             dts = dts shl 15
             dts = dts or ((buf.at(p + 3) shl 7) or ((buf.at(p + 4) shr 1) and 0x7f)).toLong()

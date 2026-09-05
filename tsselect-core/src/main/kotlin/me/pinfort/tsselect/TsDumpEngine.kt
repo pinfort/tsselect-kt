@@ -3,6 +3,14 @@ package me.pinfort.tsselect
 import java.io.InputStream
 import java.util.Arrays
 
+// Caps both how many resync events tsDump() will detail and, per event, how
+// many drops it lists (the latter capped independently at 4, see
+// addDropInfo). The C original uses the same two fixed-size arrays for the
+// same reason: a pathological stream can resync or drop thousands of times,
+// and the report is meant to show the first handful as a diagnostic sample,
+// not to be a complete log. resyncCount/ResyncReport.dropCount still track
+// the true totals even once the detailed lists stop growing, so a caller can
+// tell "8 resyncs, only 8 shown" from "8 resyncs, all shown".
 internal const val RESYNC_LOG_MAX = 8
 
 // The dump-mode state machine. Internal: callers use the tsDump() functions,
@@ -102,6 +110,28 @@ internal class TsDumpEngine {
 
     // Consolidated packet-processing body (C duplicates it at lines 250-303
     // and 346-398 of tsselect.c).
+    //
+    // Decision tree for whether a packet counts as a "drop" (a continuity
+    // error), following MPEG-2's per-PID continuity_counter (CC) rule: a
+    // payload-bearing packet's CC must be exactly one more than the previous
+    // packet on the same PID, mod 16; a packet with no payload must repeat
+    // the previous CC unchanged; and a PID may resend one packet verbatim
+    // (CC unchanged) to signal a deliberate duplicate, but never two in a
+    // row. Checked in this order, once lcc (the previous CC) is known and
+    // discontinuityIndicator is *not* set (that flag means the encoder is
+    // telling us a break is expected, so skip the check entirely):
+    //   1. pid == 0x1fff (the null PID): stuffing packets have no CC
+    //      semantics, so never flagged.
+    //   2. no payload (adaptationFieldControl bit 0 clear): CC must not
+    //      change; any change is a drop.
+    //   3. lcc == CC (same counter as last time): either a legitimate single
+    //      retransmission (payload bytes identical) or the start of one -
+    //      duplicateCount tracks how many of these in a row we've seen, and
+    //      a second one in a row is itself a drop, not just a differing
+    //      payload.
+    //   4. otherwise (CC advanced): must have advanced by exactly 1 mod 16,
+    //      or it's a drop; duplicateCount resets since we left the "same CC"
+    //      run.
     fun processPacket(
         buf: ByteArray,
         pos: Int,
@@ -163,6 +193,15 @@ internal class TsDumpEngine {
         }
     }
 
+    // Attributes a drop to resyncReports[resyncCount - 1], i.e. the *previous*
+    // resync entry, not "entry number resyncCount". resyncCount already counts
+    // the resync that just happened (run() increments it right after
+    // recording sync), so by the time a packet after that recovery turns out
+    // to be dropped, resyncCount - 1 is the index of the entry describing the
+    // very loss-of-sync/recovery pair this drop occurred after. A drop found
+    // before the first resync (resyncCount == 0) has no entry to attach to
+    // and is silently uncounted here, matching the C original: the top-level
+    // per-PID drop counter (TsStatus.drop) still records it regardless.
     private fun addDropInfo(
         pid: Int,
         pos: Long,

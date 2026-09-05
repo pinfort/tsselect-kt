@@ -76,16 +76,30 @@ private fun errorMessage(
         is TsWriteException -> "error - failed on write() [dst]\n"
     }
 
+/**
+ * The parsed argv for remux mode (`tsselect src dst [pid ...] [-x|-X]`).
+ *
+ * @property src the source path, taken verbatim from `args[0]`.
+ * @property dst the destination path, taken verbatim from `args[1]`.
+ * @property pids the parsed PID selection from `args[2..]`.
+ */
 class ParsedArgs(
     val src: String,
     val dst: String,
     val pids: PidSelection,
 )
 
-// Port of the argv loop: args[0]=src, args[1]=dst, the rest are PID tokens plus
-// an optional -x/-X to invert the selection. Option grammar is the CLI's
-// business; the number grammar belongs to PidSelection.parse.
-// Returns null on an invalid option, after printing the C error message.
+/**
+ * Port of the argv loop: `args[0]`=src, `args[1]`=dst, the rest are PID
+ * tokens plus an optional `-x`/`-X` to invert the selection. Option grammar
+ * (which flags exist, `error - invalid option`) is the CLI's business; the
+ * PID number grammar belongs to [PidSelection.parse].
+ *
+ * @param args the full process argv; must have at least 2 elements (checked
+ *   by the caller in [runCli], not here).
+ * @return the parsed source/destination/selection, or `null` on an invalid
+ *   option, after printing the C tool's error message to stderr.
+ */
 fun parseArgs(args: Array<String>): ParsedArgs? {
     val tokens = ArrayList<String>()
     var exclude = false
