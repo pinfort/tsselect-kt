@@ -11,6 +11,20 @@ The project ships two things from one build:
 
 ## The executable
 
+Every tagged release carries the CLI distribution on its
+[GitHub release page](https://github.com/pinfort/tsselect-kt/releases) as
+`tsselect-<version>.zip` / `.tar.gz`, with a `SHA256SUMS.txt` beside them:
+
+```bash
+tar xzf tsselect-1.0.0.tar.gz
+tsselect-1.0.0/bin/tsselect src.m2t        # `bin/tsselect.bat` on Windows
+```
+
+The archive is a plain JVM distribution — the launcher script plus the jars — so it needs a
+Java 25 runtime on `PATH` (or `JAVA_HOME`) and nothing else.
+
+To build it from source instead:
+
 ```bash
 ./gradlew :tsselect-cli:installDist
 ```
