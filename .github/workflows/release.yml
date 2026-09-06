@@ -52,20 +52,29 @@ jobs:
             *-SNAPSHOT) echo "::error::Central does not accept SNAPSHOT releases: $version"; exit 1 ;;
             '') echo "::error::Could not resolve a version"; exit 1 ;;
           esac
+          # A version published to Central can never be replaced, so reject a
+          # typo'd tag here rather than discovering it as a Portal validation
+          # error. This also leaves nothing shell-significant in the value.
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+            echo "::error::Not a valid release version: $version"; exit 1
+          fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "Publishing me.pinfort:tsselect:$version"
 
       # A release that fails its own test suite is worse than no release, and a
       # published version can never be replaced on Central.
       - name: Test
-        run: ./gradlew --no-daemon "-Pversion=${{ steps.version.outputs.version }}" test
+        env:
+          RESOLVED_VERSION: ${{ steps.version.outputs.version }}
+        run: ./gradlew --no-daemon "-Pversion=$RESOLVED_VERSION" test
 
       # Uploads a signed bundle and leaves it validated in the Central Portal;
       # publishing it is a button there. Swap for `publishAndReleaseToMavenCentral`
       # to make the tag push release it outright.
       - name: Publish to Maven Central
-        run: ./gradlew --no-daemon "-Pversion=${{ steps.version.outputs.version }}" :tsselect-core:publishToMavenCentral
+        run: ./gradlew --no-daemon "-Pversion=$RESOLVED_VERSION" :tsselect-core:publishToMavenCentral
         env:
+          RESOLVED_VERSION: ${{ steps.version.outputs.version }}
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_IN_MEMORY_KEY }}

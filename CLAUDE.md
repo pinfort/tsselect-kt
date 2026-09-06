@@ -143,7 +143,8 @@ The `bytecode` job compiles `:tsselect-core` and asserts every `.class` file und
 stays enforced rather than only documented.
 
 `.github/workflows/release.yml` publishes on a `v*` tag push (or manual dispatch): it
-resolves the version from the tag, refuses `-SNAPSHOT`, runs the tests, then uploads a signed
+resolves the version from the tag, refuses `-SNAPSHOT` and anything that is not `X.Y.Z`
+(optionally with a prerelease suffix), runs the tests, then uploads a signed
 bundle to the Central Portal, stopping short of releasing it. Credentials live in the
 `maven-central` GitHub environment; the human-side setup is in `RELEASING.md`.
 
