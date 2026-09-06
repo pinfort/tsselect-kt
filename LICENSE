@@ -19,9 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-This project is a derivative work of `tsselect` ver. 0.1.8 by 茂木和洋
-(Mogi Kazuhiro). The MIT license above covers this Kotlin port only; it does
-not relicense the original C source. See NOTICE for the original terms.
