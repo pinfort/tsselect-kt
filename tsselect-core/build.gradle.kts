@@ -1,6 +1,7 @@
 import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.KotlinJvm
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
     kotlin("jvm")
@@ -28,6 +29,15 @@ kotlin {
         // JDK 17 signature set, so a newer API is a compile error here rather than
         // a NoSuchMethodError for a consumer on 17.
         freeCompilerArgs.add("-Xjdk-release=17")
+        // jvmTarget/-Xjdk-release only pin the class-file version; they say
+        // nothing about the `mv` (metadata version) field the Kotlin compiler
+        // stamps into every class's @Metadata annotation, which defaults to
+        // whatever languageVersion this compiler treats as current. A consumer
+        // on Java 17 but an older Kotlin compiler would still be rejected
+        // (or need -Xskip-metadata-version-check) without this pin. 2.0 is the
+        // oldest languageVersion this Kotlin compiler still accepts.
+        languageVersion.set(KotlinVersion.KOTLIN_2_0)
+        apiVersion.set(KotlinVersion.KOTLIN_2_0)
     }
     // The published surface is small and deliberate; make widening it a
     // compile error rather than an oversight.
