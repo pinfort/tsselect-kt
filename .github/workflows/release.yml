@@ -1,0 +1,81 @@
+name: Release
+
+# Releases are cut by pushing a tag: `git tag v1.0.0 && git push origin v1.0.0`.
+# The tag is the single source of truth for the version — `-Pversion` overrides
+# the placeholder in gradle.properties, so the published coordinates always
+# match the tag that produced them.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (without the leading v), e.g. 1.0.0'
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: maven-central
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Resolve version
+        id: version
+        # `inputs.version` is attacker-controllable text, so it reaches the shell
+        # through the environment rather than being interpolated into the script.
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            version="$INPUT_VERSION"
+          else
+            version="${GITHUB_REF_NAME#v}"
+          fi
+          case "$version" in
+            *-SNAPSHOT) echo "::error::Central does not accept SNAPSHOT releases: $version"; exit 1 ;;
+            '') echo "::error::Could not resolve a version"; exit 1 ;;
+          esac
+          # A version published to Central can never be replaced, so reject a
+          # typo'd tag here rather than discovering it as a Portal validation
+          # error. This also leaves nothing shell-significant in the value.
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+            echo "::error::Not a valid release version: $version"; exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Publishing me.pinfort:tsselect:$version"
+
+      # A release that fails its own test suite is worse than no release, and a
+      # published version can never be replaced on Central.
+      - name: Test
+        env:
+          RESOLVED_VERSION: ${{ steps.version.outputs.version }}
+        run: ./gradlew --no-daemon "-Pversion=$RESOLVED_VERSION" test
+
+      # Uploads a signed bundle and leaves it validated in the Central Portal;
+      # publishing it is a button there. Swap for `publishAndReleaseToMavenCentral`
+      # to make the tag push release it outright.
+      - name: Publish to Maven Central
+        run: ./gradlew --no-daemon "-Pversion=$RESOLVED_VERSION" :tsselect-core:publishToMavenCentral
+        env:
+          RESOLVED_VERSION: ${{ steps.version.outputs.version }}
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_IN_MEMORY_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_IN_MEMORY_KEY_PASSWORD }}

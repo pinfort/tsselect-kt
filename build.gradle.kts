@@ -5,11 +5,7 @@ plugins {
     kotlin("jvm") version "2.4.10" apply false
     id("org.jlleitschuh.gradle.ktlint") version "13.1.0" apply false
     id("org.jetbrains.kotlinx.kover") version "0.9.9"
-}
-
-allprojects {
-    group = "me.pinfort"
-    version = "1.0-SNAPSHOT"
+    id("com.vanniktech.maven.publish") version "0.37.0" apply false
 }
 
 // Aggregate coverage across both modules; reports land in build/reports/kover.

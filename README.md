@@ -62,14 +62,16 @@ original's behavior.
 
 ## The library
 
-```bash
-./gradlew :tsselect-core:publishToMavenLocal
-```
+Published to Maven Central as `me.pinfort:tsselect`:
 
 ```kotlin
-repositories { mavenLocal() }
-dependencies { implementation("me.pinfort:tsselect:1.0-SNAPSHOT") }
+dependencies { implementation("me.pinfort:tsselect:1.0.0") }
 ```
+
+It targets Java 17 bytecode, so consumers on 17, 21 and 25 can all use it. To try
+an unreleased change, `./gradlew :tsselect-core:publishToMavenLocal` and add
+`mavenLocal()` to your repositories. Cutting an actual release is
+[RELEASING.md](RELEASING.md).
 
 Analyzing a stream. `tsDump` returns a data model; `format()` renders it in the
 C tool's exact output shape if you want that:

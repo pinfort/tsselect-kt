@@ -31,6 +31,9 @@ Many comments in the Kotlin code cite line numbers in `tsselect.c`.
 
 # publish the library locally (artifact me.pinfort:tsselect)
 ./gradlew :tsselect-core:publishToMavenLocal
+
+# upload a signed bundle to the Central Portal (needs the credentials in RELEASING.md)
+./gradlew -Pversion=1.0.0 :tsselect-core:publishToMavenCentral
 ```
 
 Requires a JDK 25 toolchain; Gradle provisions it via the foojay resolver (needs network on
@@ -138,6 +141,30 @@ table to the job summary, and uploads `build/reports/kover/` as the `coverage-re
 The `bytecode` job compiles `:tsselect-core` and asserts every `.class` file under
 `build/classes/kotlin/main` has class-file major version 61, so the "Java 17 bytecode" target
 stays enforced rather than only documented.
+
+`.github/workflows/release.yml` publishes on a `v*` tag push (or manual dispatch): it
+resolves the version from the tag, refuses `-SNAPSHOT` and anything that is not `X.Y.Z`
+(optionally with a prerelease suffix), runs the tests, then uploads a signed
+bundle to the Central Portal, stopping short of releasing it. Credentials live in the
+`maven-central` GitHub environment; the human-side setup is in `RELEASING.md`.
+
+## Publishing
+
+`tsselect-core` publishes to Maven Central via `com.vanniktech.maven.publish`, which owns the
+POM, the sources/javadoc jars and the Portal upload. `tsselect-cli` is an application and is
+deliberately not published.
+
+- `group` and `version` live in `gradle.properties`, not in a root `allprojects` block, so
+  Gradle applies them to both modules and CI can override the version with `-Pversion=`.
+- `signAllPublications()` is **conditional** on `signingInMemoryKey` being present. It signs
+  every publication, local ones included, so declaring it unconditionally would break
+  `publishToMavenLocal` on any machine without a GPG key.
+- The javadoc jar is `JavadocJar.Empty()`. Central requires the jar to exist; the sources are
+  pure Kotlin, so the `javadoc` task would emit an empty jar regardless. Switch to
+  `JavadocJar.Dokka()` if real API docs are ever wanted.
+- `targetCompatibility = 17` in the `java` block is what puts `org.gradle.jvm.version: 17` in
+  the published Gradle module metadata; without it, consumers building on 17 get rejected at
+  resolution even though the bytecode would run.
 
 Kover is applied to each module (`org.jetbrains.kotlinx.kover`) and aggregated by the root
 project via `kover(project(...))` dependencies. All repositories are declared once in
