@@ -38,9 +38,13 @@ jobs:
 
       - name: Resolve version
         id: version
+        # `inputs.version` is attacker-controllable text, so it reaches the shell
+        # through the environment rather than being interpolated into the script.
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            version='${{ inputs.version }}'
+            version="$INPUT_VERSION"
           else
             version="${GITHUB_REF_NAME#v}"
           fi
@@ -54,13 +58,13 @@ jobs:
       # A release that fails its own test suite is worse than no release, and a
       # published version can never be replaced on Central.
       - name: Test
-        run: ./gradlew --no-daemon -Pversion=${{ steps.version.outputs.version }} test
+        run: ./gradlew --no-daemon "-Pversion=${{ steps.version.outputs.version }}" test
 
       # Uploads a signed bundle and leaves it validated in the Central Portal;
       # publishing it is a button there. Swap for `publishAndReleaseToMavenCentral`
       # to make the tag push release it outright.
       - name: Publish to Maven Central
-        run: ./gradlew --no-daemon -Pversion=${{ steps.version.outputs.version }} :tsselect-core:publishToMavenCentral
+        run: ./gradlew --no-daemon "-Pversion=${{ steps.version.outputs.version }}" :tsselect-core:publishToMavenCentral
         env:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
