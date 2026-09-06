@@ -85,47 +85,44 @@ public data class TsDumpReport(
  * Returns the text instead of writing it, so the library stays free of any
  * output stream; callers print or log the result themselves.
  */
-public fun TsDumpReport.format(): String {
-    val sb = StringBuilder()
-
-    if (resyncCount > 0) {
-        sb.append("total sync error: %d\n".format(Locale.ROOT, resyncCount))
-        for ((i, entry) in resyncEntries.withIndex()) {
-            sb.append(
-                "  resync[%d] : miss=0x%012x, sync=0x%012x, drop=%d\n".format(
-                    Locale.ROOT,
-                    i,
-                    entry.miss,
-                    entry.sync,
-                    entry.dropCount,
-                ),
-            )
-            for ((j, drop) in entry.drops.withIndex()) {
-                sb.append(
-                    "    drop[%d] : pid=0x%04x, pos=0x%012x\n".format(
+public fun TsDumpReport.format(): String =
+    buildString {
+        if (resyncCount > 0) {
+            append("total sync error: %d\n".format(Locale.ROOT, resyncCount))
+            for ((i, entry) in resyncEntries.withIndex()) {
+                append(
+                    "  resync[%d] : miss=0x%012x, sync=0x%012x, drop=%d\n".format(
                         Locale.ROOT,
-                        j,
-                        drop.pid,
-                        drop.pos,
+                        i,
+                        entry.miss,
+                        entry.sync,
+                        entry.dropCount,
                     ),
                 )
+                for ((j, drop) in entry.drops.withIndex()) {
+                    append(
+                        "    drop[%d] : pid=0x%04x, pos=0x%012x\n".format(
+                            Locale.ROOT,
+                            j,
+                            drop.pid,
+                            drop.pos,
+                        ),
+                    )
+                }
             }
         }
-    }
 
-    for (pid in pids) {
-        sb.append(
-            "pid=0x%04x, total=%8d, d=%3d, e=%3d, scrambling=%d, offset=%d\n".format(
-                Locale.ROOT,
-                pid.pid,
-                pid.total,
-                pid.drop,
-                pid.error,
-                pid.scrambling,
-                pid.firstOffset,
-            ),
-        )
+        for (pid in pids) {
+            append(
+                "pid=0x%04x, total=%8d, d=%3d, e=%3d, scrambling=%d, offset=%d\n".format(
+                    Locale.ROOT,
+                    pid.pid,
+                    pid.total,
+                    pid.drop,
+                    pid.error,
+                    pid.scrambling,
+                    pid.firstOffset,
+                ),
+            )
+        }
     }
-
-    return sb.toString()
-}

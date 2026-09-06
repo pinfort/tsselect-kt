@@ -226,23 +226,19 @@ internal class TsDumpEngine {
     // only PIDs that saw at least one packet, resync entries capped at
     // RESYNC_LOG_MAX, and at most four recorded drops per resync entry.
     fun report(): TsDumpReport {
-        val entries = ArrayList<ResyncEntry>()
-        for (i in 0 until minOf(resyncCount, RESYNC_LOG_MAX)) {
-            val r = resyncReports[i]
-            val drops = ArrayList<DropEntry>()
-            for (j in 0 until minOf(r.dropCount, 4L).toInt()) {
-                drops.add(DropEntry(r.dropPid[j], r.dropPos[j]))
+        val entries =
+            resyncReports.take(minOf(resyncCount, RESYNC_LOG_MAX)).map { r ->
+                val drops =
+                    (0 until minOf(r.dropCount, 4L).toInt()).map { j ->
+                        DropEntry(r.dropPid[j], r.dropPos[j])
+                    }
+                ResyncEntry(r.miss, r.sync, r.dropCount, drops)
             }
-            entries.add(ResyncEntry(r.miss, r.sync, r.dropCount, drops))
-        }
 
-        val pids = ArrayList<PidReport>()
-        for (i in 0 until PidSelection.PID_COUNT) {
-            val st = stats[i]
-            if (st.total > 0) {
-                pids.add(PidReport(i, st.total, st.drop, st.error, st.scrambling, st.first))
+        val pids =
+            stats.filter { it.total > 0 }.map {
+                PidReport(it.pid, it.total, it.drop, it.error, it.scrambling, it.first)
             }
-        }
 
         return TsDumpReport(resyncCount, entries, pids)
     }
