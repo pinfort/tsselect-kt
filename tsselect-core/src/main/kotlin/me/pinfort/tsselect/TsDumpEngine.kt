@@ -36,7 +36,7 @@ internal class TsDumpEngine {
         var n = readFully(input, buf, 0, buf.size)
 
         val unitSize = selectUnitSize(buf, n)
-        if (unitSize < 188) {
+        if (unitSize < TS_PACKET_SIZE) {
             throw TsFormatException()
         }
 
@@ -83,7 +83,7 @@ internal class TsDumpEngine {
         } while (n > unitSize)
 
         curr = 0
-        while (curr + 188 <= n) {
+        while (curr + TS_PACKET_SIZE <= n) {
             if (buf[curr] != SYNC_BYTE) {
                 if (resyncCount < RESYNC_LOG_MAX) {
                     resyncReports[resyncCount].miss = offset + curr
@@ -97,7 +97,7 @@ internal class TsDumpEngine {
                     resyncReports[resyncCount].sync = offset + curr
                 }
                 resyncCount += 1
-                if (p + 188 > n) {
+                if (p + TS_PACKET_SIZE > n) {
                     break
                 }
             }
@@ -162,7 +162,7 @@ internal class TsDumpEngine {
                 }
             } else if (lcc == header.continuityCounter) {
                 // has payload and same continuity_counter
-                if (!Arrays.equals(st.lastPacket, 0, 188, buf, pos, pos + 188)) {
+                if (!Arrays.equals(st.lastPacket, 0, TS_PACKET_SIZE, buf, pos, pos + TS_PACKET_SIZE)) {
                     // non-duplicate packet
                     st.drop += 1
                     addDropInfo(pid, filePos)
@@ -187,7 +187,7 @@ internal class TsDumpEngine {
         if (header.transportErrorIndicator != 0) {
             st.error += 1
         }
-        System.arraycopy(buf, pos, st.lastPacket, 0, 188)
+        System.arraycopy(buf, pos, st.lastPacket, 0, TS_PACKET_SIZE)
         if (header.transportScramblingControl != 0) {
             st.scrambling += 1
         }

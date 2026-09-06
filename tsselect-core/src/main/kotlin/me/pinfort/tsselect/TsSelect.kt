@@ -105,7 +105,7 @@ public fun tsSelect(
     var n = readFully(input, buf, 0, buf.size)
 
     val unitSize = selectUnitSize(buf, n)
-    if (unitSize < 188) {
+    if (unitSize < TS_PACKET_SIZE) {
         throw TsFormatException()
     }
 
@@ -150,14 +150,14 @@ public fun tsSelect(
     } while (n > unitSize)
 
     curr = 0
-    while (curr + 188 <= n) {
+    while (curr + TS_PACKET_SIZE <= n) {
         if (buf[curr] != SYNC_BYTE) {
             val p = resyncForce(buf, curr, n, unitSize)
             if (p < 0) {
                 break
             }
             curr = p
-            if (p + 188 > n) {
+            if (p + TS_PACKET_SIZE > n) {
                 break
             }
         }
@@ -188,7 +188,7 @@ private fun OutputStream.writePacket(
     off: Int,
 ) {
     try {
-        write(buf, off, 188)
+        write(buf, off, TS_PACKET_SIZE)
     } catch (e: IOException) {
         throw TsWriteException(e)
     }

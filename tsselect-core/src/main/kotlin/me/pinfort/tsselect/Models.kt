@@ -20,7 +20,7 @@ internal class TsStatus(
     // same-CC retransmission is byte-identical to the packet it repeats (a
     // legitimate duplicate) or actually different data under an unchanged CC
     // (a drop) - see processPacket.
-    val lastPacket = ByteArray(188)
+    val lastPacket = ByteArray(TS_PACKET_SIZE)
 
     // How many consecutive packets on this PID have repeated the last CC
     // unchanged; a second one in a row is itself flagged as a drop.

@@ -2,6 +2,17 @@ package me.pinfort.tsselect
 
 internal const val SYNC_BYTE: Byte = 0x47
 
+// Every TS packet is 188 bytes. The 192 (M2TS) and 204 (Reed-Solomon) grids
+// are that same packet plus a trailing timestamp / parity block, so this is
+// both the amount of a unit that carries TS content - the only part a remux
+// writes out - and the smallest unit_size selectUnitSize can return.
+internal const val TS_PACKET_SIZE = 188
+
+// Exclusive upper bound of selectUnitSize's stride search: it histograms
+// 0x47-to-0x47 distances over [TS_PACKET_SIZE, MAX_UNIT_SIZE), which spans
+// all three known grids with room to spare.
+private const val MAX_UNIT_SIZE = 320
+
 // Port of select_unit_size: histogram of 0x47-to-0x47 strides in [188, 320),
 // returns the most frequent one, or 0 when the buffer does not validate.
 //
@@ -23,22 +34,22 @@ internal fun selectUnitSize(
     buf: ByteArray,
     len: Int,
 ): Int {
-    val count = IntArray(320 - 188)
+    val count = IntArray(MAX_UNIT_SIZE - TS_PACKET_SIZE)
 
     // 1st step, count up 0x47 interval
     var pos = 0
-    while (pos + 188 < len) {
+    while (pos + TS_PACKET_SIZE < len) {
         if (buf[pos] != SYNC_BYTE) {
             pos += 1
             continue
         }
-        var m = 320
+        var m = MAX_UNIT_SIZE
         if (pos + m > len) {
             m = len - pos
         }
-        for (i in 188 until m) {
+        for (i in TS_PACKET_SIZE until m) {
             if (buf[pos + i] == SYNC_BYTE) {
-                count[i - 188] += 1
+                count[i - TS_PACKET_SIZE] += 1
             }
         }
         pos += 1
@@ -47,9 +58,9 @@ internal fun selectUnitSize(
     // 2nd step, select maximum appeared interval
     var m = 0
     var n = 0
-    for (i in 188 until 320) {
-        if (m < count[i - 188]) {
-            m = count[i - 188]
+    for (i in TS_PACKET_SIZE until MAX_UNIT_SIZE) {
+        if (m < count[i - TS_PACKET_SIZE]) {
+            m = count[i - TS_PACKET_SIZE]
             n = i
         }
     }
@@ -114,7 +125,7 @@ internal fun resyncForce(
     unitSize: Int,
 ): Int {
     var pos = from
-    while (pos < len - 188) {
+    while (pos < len - TS_PACKET_SIZE) {
         if (buf[pos] == SYNC_BYTE) {
             val n = (len - pos) / unitSize
             if (n == 0) {

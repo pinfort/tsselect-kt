@@ -20,7 +20,7 @@ private fun ByteArray.bits(
 
 // A 188-byte packet minus the 4-byte header and the length byte itself: an
 // adaptation_field_length past this cannot fit, so the field is malformed.
-private const val MAX_ADAPTATION_FIELD_LENGTH = 188 - 4 - 1
+private const val MAX_ADAPTATION_FIELD_LENGTH = TS_PACKET_SIZE - 4 - 1
 
 // Encoded sizes of the optional sub-fields, used both to bounds-check before
 // reading one and to step past it afterwards.
