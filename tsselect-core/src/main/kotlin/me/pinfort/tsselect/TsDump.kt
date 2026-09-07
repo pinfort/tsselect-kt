@@ -1,3 +1,5 @@
+@file:JvmName("TsDump")
+
 package me.pinfort.tsselect
 
 import java.io.File
@@ -18,6 +20,7 @@ import java.io.InputStream
  * @throws TsFormatException if the input is not a 188/192/204-byte packet
  *   stream, i.e. [selectUnitSize] cannot find a valid grid.
  */
+@JvmOverloads
 public fun tsDump(
     file: File,
     progress: ProgressListener = ProgressListener.NONE,
@@ -53,6 +56,7 @@ public fun tsDump(
  * @throws TsFormatException if the input is not a 188/192/204-byte packet
  *   stream, i.e. [selectUnitSize] cannot find a valid grid.
  */
+@JvmOverloads
 public fun tsDump(
     input: InputStream,
     totalBytes: Long,

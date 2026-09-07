@@ -45,6 +45,7 @@ public fun interface ProgressListener {
 
     public companion object {
         /** A listener that discards every notification. */
+        @JvmField
         public val NONE: ProgressListener = ProgressListener { }
     }
 }
