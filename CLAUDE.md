@@ -70,7 +70,8 @@ Two modules, one build:
    attributed to the current resync entry (`RESYNC_LOG_MAX` = 8, ≤ 4 drops recorded each).
 5. **Report** — `TsDumpEngine.report()` produces an immutable `TsDumpReport` data model
    (`Report.kt`), which the public `tsDump()` returns; `TsDumpReport.format()` renders it as the
-   C tool's exact text. Formatting is separate from the model so the library stays output-free.
+   C tool's exact text. `format()` returns the string rather than writing it, so the library
+   stays output-free.
 
 ### Key seams
 

@@ -6,7 +6,6 @@ import me.pinfort.tsselect.TsException
 import me.pinfort.tsselect.TsFormatException
 import me.pinfort.tsselect.TsSourceOpenException
 import me.pinfort.tsselect.TsWriteException
-import me.pinfort.tsselect.format
 import me.pinfort.tsselect.tsDump
 import me.pinfort.tsselect.tsSelect
 import java.io.File
