@@ -9,6 +9,19 @@ The project ships two things from one build:
 | `tsselect-core` | The library — TS packet parsing, sync recovery, drop/continuity analysis, PID remuxing. No printing, no `exitProcess`. Published as `me.pinfort:tsselect`. |
 | `tsselect-cli` | The `tsselect` executable — argument parsing, the stderr progress bar, and the report output. |
 
+## Version requirements
+
+| Usage | Java | Kotlin |
+| --- | --- | --- |
+| Run the CLI (release archive or `installDist`) | 25 runtime on `PATH` / `JAVA_HOME` | — |
+| Use the library from Kotlin | 17+ runtime (artifact is Java 17 bytecode; 17, 21, 25 all work) | 2.0+ — `languageVersion`/`apiVersion` and `@Metadata` are pinned to 2.0, so an older compiler needs `-Xskip-metadata-version-check` |
+| Use the library from Java | 17+ runtime | none |
+| Build from source | JDK 25 (any JDK launches the wrapper; the JDK 25 toolchain is auto-provisioned via the foojay resolver, which needs network on first run) | 2.4, supplied by the Kotlin Gradle plugin |
+
+Gradle 9.6 comes from the wrapper (`./gradlew`) — nothing to install.
+`tsselect-core` compiles to Java 17 bytecode with Kotlin language version 2.0;
+`tsselect-cli` targets Java 25.
+
 ## The executable
 
 Every tagged release carries the CLI distribution on its
@@ -20,8 +33,8 @@ tar xzf tsselect-1.0.0.tar.gz
 tsselect-1.0.0/bin/tsselect src.m2t        # `bin/tsselect.bat` on Windows
 ```
 
-The archive is a plain JVM distribution — the launcher script plus the jars — so it needs a
-Java 25 runtime on `PATH` (or `JAVA_HOME`) and nothing else.
+The archive is a plain JVM distribution — the launcher script plus the jars — so its only
+requirement is a Java 25 runtime (see [Version requirements](#version-requirements)).
 
 To build it from source instead:
 
@@ -82,8 +95,10 @@ Published to Maven Central as `me.pinfort:tsselect`:
 dependencies { implementation("me.pinfort:tsselect:1.0.0") }
 ```
 
-It targets Java 17 bytecode, so consumers on 17, 21 and 25 can all use it. To try
-an unreleased change, `./gradlew :tsselect-core:publishToMavenLocal` and add
+It targets Java 17 bytecode, so consumers on 17, 21 and 25 can all use it; Kotlin
+consumers need Kotlin 2.0+ (see [Version requirements](#version-requirements)).
+
+To try an unreleased change, `./gradlew :tsselect-core:publishToMavenLocal` and add
 `mavenLocal()` to your repositories. Cutting an actual release is
 [RELEASING.md](RELEASING.md).
 
@@ -173,7 +188,8 @@ TsDump.tsDump(new File("src.m2ts"), p -> {
 ./gradlew build
 ```
 
-Requires a JDK 25 toolchain (Gradle provisions it via the foojay resolver).
+Requires a JDK 25 toolchain (Gradle provisions it via the foojay resolver) — see
+[Version requirements](#version-requirements).
 
 ## Credits and license
 
