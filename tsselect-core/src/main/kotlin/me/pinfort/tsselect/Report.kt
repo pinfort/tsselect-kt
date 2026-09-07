@@ -71,58 +71,58 @@ public data class TsDumpReport(
     val resyncCount: Int,
     val resyncEntries: List<ResyncEntry>,
     val pids: List<PidReport>,
-)
-
-/**
- * Renders this report exactly as the C `tsselect` prints it, e.g.:
- * ```
- * total sync error: 3
- *   resync[0] : miss=0x000000000000, sync=0x000000000059, drop=0
- *   resync[1] : miss=0x000053be0745, sync=0x000053be0827, drop=11
- *     drop[0] : pid=0x1008, pos=0x000053be0827
- * pid=0x0012, total=  128217, d=  2, e=  0, scrambling=0, offset=8388748
- * ```
- * Returns the text instead of writing it, so the library stays free of any
- * output stream; callers print or log the result themselves.
- */
-public fun TsDumpReport.format(): String =
-    buildString {
-        if (resyncCount > 0) {
-            append("total sync error: %d\n".format(Locale.ROOT, resyncCount))
-            for ((i, entry) in resyncEntries.withIndex()) {
-                append(
-                    "  resync[%d] : miss=0x%012x, sync=0x%012x, drop=%d\n".format(
-                        Locale.ROOT,
-                        i,
-                        entry.miss,
-                        entry.sync,
-                        entry.dropCount,
-                    ),
-                )
-                for ((j, drop) in entry.drops.withIndex()) {
+) {
+    /**
+     * Renders this report exactly as the C `tsselect` prints it, e.g.:
+     * ```
+     * total sync error: 3
+     *   resync[0] : miss=0x000000000000, sync=0x000000000059, drop=0
+     *   resync[1] : miss=0x000053be0745, sync=0x000053be0827, drop=11
+     *     drop[0] : pid=0x1008, pos=0x000053be0827
+     * pid=0x0012, total=  128217, d=  2, e=  0, scrambling=0, offset=8388748
+     * ```
+     * Returns the text instead of writing it, so the library stays free of any
+     * output stream; callers print or log the result themselves.
+     */
+    public fun format(): String =
+        buildString {
+            if (resyncCount > 0) {
+                append("total sync error: %d\n".format(Locale.ROOT, resyncCount))
+                for ((i, entry) in resyncEntries.withIndex()) {
                     append(
-                        "    drop[%d] : pid=0x%04x, pos=0x%012x\n".format(
+                        "  resync[%d] : miss=0x%012x, sync=0x%012x, drop=%d\n".format(
                             Locale.ROOT,
-                            j,
-                            drop.pid,
-                            drop.pos,
+                            i,
+                            entry.miss,
+                            entry.sync,
+                            entry.dropCount,
                         ),
                     )
+                    for ((j, drop) in entry.drops.withIndex()) {
+                        append(
+                            "    drop[%d] : pid=0x%04x, pos=0x%012x\n".format(
+                                Locale.ROOT,
+                                j,
+                                drop.pid,
+                                drop.pos,
+                            ),
+                        )
+                    }
                 }
             }
-        }
 
-        for (pid in pids) {
-            append(
-                "pid=0x%04x, total=%8d, d=%3d, e=%3d, scrambling=%d, offset=%d\n".format(
-                    Locale.ROOT,
-                    pid.pid,
-                    pid.total,
-                    pid.drop,
-                    pid.error,
-                    pid.scrambling,
-                    pid.firstOffset,
-                ),
-            )
+            for (pid in pids) {
+                append(
+                    "pid=0x%04x, total=%8d, d=%3d, e=%3d, scrambling=%d, offset=%d\n".format(
+                        Locale.ROOT,
+                        pid.pid,
+                        pid.total,
+                        pid.drop,
+                        pid.error,
+                        pid.scrambling,
+                        pid.firstOffset,
+                    ),
+                )
+            }
         }
-    }
+}
