@@ -29,6 +29,9 @@ Many comments in the Kotlin code cite line numbers in `tsselect.c`.
 ./gradlew :tsselect-cli:run --args="src.m2ts"
 ./gradlew :tsselect-cli:installDist   # launcher: tsselect-cli/build/install/tsselect/bin/tsselect
 
+# the release archives (tsselect-cli/build/distributions/tsselect-<version>.{zip,tar.gz})
+./gradlew -Pversion=1.0.0 :tsselect-cli:distZip :tsselect-cli:distTar
+
 # publish the library locally (artifact me.pinfort:tsselect)
 ./gradlew :tsselect-core:publishToMavenLocal
 
@@ -142,17 +145,28 @@ The `bytecode` job compiles `:tsselect-core` and asserts every `.class` file und
 `build/classes/kotlin/main` has class-file major version 61, so the "Java 17 bytecode" target
 stays enforced rather than only documented.
 
-`.github/workflows/release.yml` publishes on a `v*` tag push (or manual dispatch): it
-resolves the version from the tag, refuses `-SNAPSHOT` and anything that is not `X.Y.Z`
-(optionally with a prerelease suffix), runs the tests, then uploads a signed
-bundle to the Central Portal, stopping short of releasing it. Credentials live in the
-`maven-central` GitHub environment; the human-side setup is in `RELEASING.md`.
+`.github/workflows/release.yml` runs on a `v*` tag push (or manual dispatch). A `prepare`
+job resolves the version from the tag — refusing `-SNAPSHOT` and anything that is not
+`X.Y.Z` (optionally with a prerelease suffix) — and runs the tests once; two jobs then fan
+out from it, deliberately independent so neither blocks the other:
+
+- `cli` builds `:tsselect-cli:distZip`/`distTar`, unpacks the zip and runs the launcher as a
+  smoke test, then attaches both archives and a `SHA256SUMS.txt` to the tag's GitHub release
+  (creating it with generated notes if it does not exist). It needs no secrets — `contents:
+  write` is scoped to that job alone, the rest of the workflow stays `contents: read`. A
+  `workflow_dispatch` run has no tag to attach to, so it stops at the workflow artifact.
+- `publish` uploads a signed bundle to the Central Portal, stopping short of releasing it.
+  Credentials live in the `maven-central` GitHub environment; the human-side setup is in
+  `RELEASING.md`.
 
 ## Publishing
 
 `tsselect-core` publishes to Maven Central via `com.vanniktech.maven.publish`, which owns the
 POM, the sources/javadoc jars and the Portal upload. `tsselect-cli` is an application and is
-deliberately not published.
+deliberately not published to Central; it ships as the `application` plugin's distribution
+archives, attached to the GitHub release by the workflow above. `applicationName = "tsselect"`
+names those archives as well as the launcher, and `distTar` is switched to gzip so the release
+asset is not a bare 2 MB `.tar`.
 
 - `group` and `version` live in `gradle.properties`, not in a root `allprojects` block, so
   Gradle applies them to both modules and CI can override the version with `-Pversion=`.

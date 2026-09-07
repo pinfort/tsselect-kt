@@ -4,6 +4,11 @@ name: Release
 # The tag is the single source of truth for the version — `-Pversion` overrides
 # the placeholder in gradle.properties, so the published coordinates always
 # match the tag that produced them.
+#
+# A tag push produces two artifacts: the `me.pinfort:tsselect` library on the
+# Central Portal, and the `tsselect` CLI distribution attached to the GitHub
+# release. The two jobs are independent, so a Central failure (or a pending
+# approval on the `maven-central` environment) does not hold up the download.
 on:
   push:
     tags: ['v*']
@@ -21,9 +26,13 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  publish:
+  # Resolves the version once for both downstream jobs and gates them on the
+  # test suite: a release that fails its own tests is worse than no release,
+  # and a published version can never be replaced on Central.
+  prepare:
     runs-on: ubuntu-latest
-    environment: maven-central
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
 
@@ -59,14 +68,111 @@ jobs:
             echo "::error::Not a valid release version: $version"; exit 1
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "Publishing me.pinfort:tsselect:$version"
+          echo "Releasing tsselect $version"
 
-      # A release that fails its own test suite is worse than no release, and a
-      # published version can never be replaced on Central.
       - name: Test
         env:
           RESOLVED_VERSION: ${{ steps.version.outputs.version }}
         run: ./gradlew --no-daemon "-Pversion=$RESOLVED_VERSION" test
+
+  # Builds the CLI distribution and attaches it to the GitHub release for the
+  # tag. `tsselect-cli` is not published to Central — this is how it ships.
+  cli:
+    needs: prepare
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build the CLI distribution
+        env:
+          RESOLVED_VERSION: ${{ needs.prepare.outputs.version }}
+        run: ./gradlew --no-daemon "-Pversion=$RESOLVED_VERSION" :tsselect-cli:distZip :tsselect-cli:distTar
+
+      # Smoke-test the archive that is about to be published, not just the
+      # classes it was built from: unpack it and run the launcher.
+      - name: Smoke-test the launcher
+        env:
+          RESOLVED_VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          set -eu
+          dist="tsselect-cli/build/distributions/tsselect-$RESOLVED_VERSION.zip"
+          unzip -q "$dist" -d "$RUNNER_TEMP/dist"
+          # No arguments: the CLI prints usage and exits non-zero, as the C tool does.
+          out=$("$RUNNER_TEMP/dist/tsselect-$RESOLVED_VERSION/bin/tsselect" 2>&1) && rc=0 || rc=$?
+          printf '%s\n' "$out"
+          case "$out" in
+            *"usage: tsselect src.m2t"*) ;;
+            *) echo "::error::Launcher did not print usage (exit $rc)"; exit 1 ;;
+          esac
+
+      - name: Checksums
+        working-directory: tsselect-cli/build/distributions
+        env:
+          RESOLVED_VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          set -eu
+          sha256sum "tsselect-$RESOLVED_VERSION.zip" "tsselect-$RESOLVED_VERSION.tar.gz" \
+            | tee "tsselect-$RESOLVED_VERSION-SHA256SUMS.txt"
+
+      - name: Upload the distribution as a workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tsselect-cli-${{ needs.prepare.outputs.version }}
+          path: |
+            tsselect-cli/build/distributions/tsselect-${{ needs.prepare.outputs.version }}.zip
+            tsselect-cli/build/distributions/tsselect-${{ needs.prepare.outputs.version }}.tar.gz
+            tsselect-cli/build/distributions/tsselect-${{ needs.prepare.outputs.version }}-SHA256SUMS.txt
+          if-no-files-found: error
+
+      # Only a tag push has a release to attach to; a `workflow_dispatch` run
+      # stops at the workflow artifact above.
+      - name: Attach the distribution to the GitHub release
+        if: github.event_name == 'push'
+        working-directory: tsselect-cli/build/distributions
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+          RESOLVED_VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          set -eu
+          # The tag may or may not already have a release behind it — the tag
+          # push may have come before anyone opened the releases page.
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --verify-tag --title "$TAG" --generate-notes
+          fi
+          gh release upload "$TAG" \
+            "tsselect-$RESOLVED_VERSION.zip" \
+            "tsselect-$RESOLVED_VERSION.tar.gz" \
+            "tsselect-$RESOLVED_VERSION-SHA256SUMS.txt" \
+            --clobber
+
+  publish:
+    needs: prepare
+    runs-on: ubuntu-latest
+    environment: maven-central
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
 
       # Uploads a signed bundle and leaves it validated in the Central Portal;
       # publishing it is a button there. Swap for `publishAndReleaseToMavenCentral`
@@ -74,7 +180,7 @@ jobs:
       - name: Publish to Maven Central
         run: ./gradlew --no-daemon "-Pversion=$RESOLVED_VERSION" :tsselect-core:publishToMavenCentral
         env:
-          RESOLVED_VERSION: ${{ steps.version.outputs.version }}
+          RESOLVED_VERSION: ${{ needs.prepare.outputs.version }}
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_IN_MEMORY_KEY }}

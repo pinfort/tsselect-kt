@@ -2,7 +2,8 @@
 
 The library module (`tsselect-core`) is published to Maven Central through the
 [Sonatype Central Portal](https://central.sonatype.com). `tsselect-cli` is an
-application and is deliberately not published.
+application and is deliberately not published to Central — it ships instead as a
+distribution archive attached to the GitHub release for the tag.
 
 Everything Gradle-side is already wired up (`tsselect-core/build.gradle.kts` and
 `.github/workflows/release.yml`). What remains is account setup, which is manual
@@ -83,10 +84,21 @@ approval gate on every release), then add these four secrets to it:
    git push origin v1.0.0
    ```
 
-3. The **Release** workflow runs the test suite, then uploads a signed bundle to
-   the Central Portal. It stops at the `PUBLISHING`/`VALIDATED` state.
+3. The **Release** workflow runs the test suite once (`prepare`), then fans out:
+
+   - `cli` builds `tsselect-<version>.zip` / `.tar.gz`, unpacks the zip and runs
+     the launcher as a smoke test, then attaches both archives plus
+     `tsselect-<version>-SHA256SUMS.txt` to the GitHub release for the tag,
+     creating that release with generated notes if it does not exist yet. It uses
+     the built-in `GITHUB_TOKEN` (`contents: write` on that job only) — no secrets.
+   - `publish` uploads a signed bundle to the Central Portal. It stops at the
+     `PUBLISHING`/`VALIDATED` state.
+
+   The two are independent, so a Central failure — or a pending reviewer approval
+   on the `maven-central` environment — does not hold up the download.
 4. Go to Portal → **Deployments**, check the contents, and press **Publish**.
    The artifact appears on Central within ~15 minutes and on search shortly after.
+5. Edit the release notes on GitHub if the generated ones need a human pass.
 
 To skip step 4 and have a tag push go all the way to Central, change the workflow's
 publish task from `publishToMavenCentral` to `publishAndReleaseToMavenCentral`.
@@ -94,10 +106,21 @@ publish task from `publishToMavenCentral` to `publishAndReleaseToMavenCentral`.
 **A published version is permanent.** Central does not allow replacing or deleting
 a released version — a mistake costs you a version number.
 
+A `workflow_dispatch` run does everything except touch a GitHub release (there is
+no tag to attach to): the CLI archives are left as a workflow artifact on the run.
+
 ## Checking things locally first
 
+The CLI archives, exactly as the `cli` job builds them:
+
 ```bash
-# Full artifact set into ~/.m2 — unsigned, since no key is configured.
+./gradlew -Pversion=<version> :tsselect-cli:distZip :tsselect-cli:distTar
+ls tsselect-cli/build/distributions/
+```
+
+The library's full artifact set into `~/.m2` — unsigned, since no key is configured:
+
+```bash
 ./gradlew :tsselect-core:publishToMavenLocal
 ls ~/.m2/repository/me/pinfort/tsselect/<version>/
 ```
