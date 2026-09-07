@@ -140,6 +140,33 @@ tsDump(file) { p ->
 }
 ```
 
+### From Java
+
+The public surface carries `@JvmName` / `@JvmStatic` / `@JvmOverloads` / `@JvmField`,
+so it reads the same from Java: the entry points live on `TsDump` / `TsSelect`
+(not `TsDumpKt`), the `ProgressListener` argument is optional, `PidSelection`'s
+factories are plain statics, and `NONE` / `ALL` are constants:
+
+```java
+import me.pinfort.tsselect.*;
+import java.io.File;
+import java.util.List;
+
+TsDumpReport report = TsDump.tsDump(new File("src.m2ts"));
+report.getPids().forEach(p ->
+    System.out.println("pid " + p.getPid() + ": " + p.getTotal() + " packets"));
+System.out.println(report.format());
+
+PidSelection keep = PidSelection.parse(List.of("0x1000", "0x1001"));
+TsSelectResult result = TsSelect.tsSelect(new File("src.m2ts"), new File("dst.ts"), keep);
+System.out.println(result.getPacketsWritten() + " of " + result.getPacketsRead() + " kept");
+
+// progress lambda; ProgressListener.NONE is the no-op default
+TsDump.tsDump(new File("src.m2ts"), p -> {
+    if (!p.getFinished() && p.getChunkIndex() % 16 == 0) renderBar(p.getBasisPoints());
+});
+```
+
 ## Building
 
 ```bash

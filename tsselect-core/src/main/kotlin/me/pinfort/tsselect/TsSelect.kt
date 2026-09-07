@@ -1,3 +1,5 @@
+@file:JvmName("TsSelect")
+
 package me.pinfort.tsselect
 
 import java.io.BufferedOutputStream
@@ -35,6 +37,7 @@ private const val OUTPUT_BUFFER_SIZE = 65536
  *   stream.
  * @throws TsWriteException if a write to [dst] fails.
  */
+@JvmOverloads
 public fun tsSelect(
     src: File,
     dst: File,
@@ -88,6 +91,7 @@ public fun tsSelect(
  *   stream.
  * @throws TsWriteException if a write to [output] fails.
  */
+@JvmOverloads
 public fun tsSelect(
     input: InputStream,
     output: OutputStream,

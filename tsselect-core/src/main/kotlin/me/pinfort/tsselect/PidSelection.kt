@@ -32,9 +32,11 @@ public class PidSelection private constructor(
         public const val PID_COUNT: Int = 8192
 
         /** Selects no PID at all: a remux with this writes an empty file. */
+        @JvmField
         public val NONE: PidSelection = of(emptyList())
 
         /** Selects every PID: a remux with this rewrites the whole stream as 188. */
+        @JvmField
         public val ALL: PidSelection = of(emptyList(), exclude = true)
 
         /**
@@ -45,6 +47,8 @@ public class PidSelection private constructor(
          * @param exclude when true, inverts the map so every PID *except*
          *   those in [pids] is selected.
          */
+        @JvmStatic
+        @JvmOverloads
         public fun of(
             pids: Collection<Int>,
             exclude: Boolean = false,
@@ -76,6 +80,8 @@ public class PidSelection private constructor(
          * @param exclude when true, inverts the map so every PID *except*
          *   those named in [tokens] is selected.
          */
+        @JvmStatic
+        @JvmOverloads
         public fun parse(
             tokens: Collection<String>,
             exclude: Boolean = false,
