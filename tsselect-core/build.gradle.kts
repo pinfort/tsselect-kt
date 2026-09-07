@@ -13,6 +13,11 @@ plugins {
 dependencies {
     testImplementation("io.kotest:kotest-runner-junit5:5.9.1")
     testImplementation("io.kotest:kotest-assertions-core:5.9.1")
+    // JavaInteropTest.java pins the @Jvm* annotated public surface from a Java
+    // caller's point of view; it needs the Jupiter API to compile and the
+    // Jupiter engine on the platform to run alongside Kotest's engine.
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.1")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.1")
 }
 
 kotlin {
@@ -48,6 +53,13 @@ java {
     // Drives `org.gradle.jvm.version` in the published Gradle module metadata so
     // consumers building on Java 17 resolve the artifact instead of being rejected.
     targetCompatibility = JavaVersion.VERSION_17
+}
+
+// The only Java in this module is JavaInteropTest; compile it against the JDK 17
+// signature set too, so `targetCompatibility = 17` above does not clash with the
+// toolchain's source level.
+tasks.compileTestJava {
+    options.release.set(17)
 }
 
 tasks.test {
