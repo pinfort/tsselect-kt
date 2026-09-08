@@ -29,8 +29,8 @@ Every tagged release carries the CLI distribution on its
 `tsselect-<version>.zip` / `.tar.gz`, with a `SHA256SUMS.txt` beside them:
 
 ```bash
-tar xzf tsselect-1.0.0.tar.gz
-tsselect-1.0.0/bin/tsselect src.m2t        # `bin/tsselect.bat` on Windows
+tar xzf tsselect-<version>.tar.gz
+tsselect-<version>/bin/tsselect src.m2t        # `bin/tsselect.bat` on Windows
 ```
 
 The archive is a plain JVM distribution — the launcher script plus the jars — so its only
@@ -92,7 +92,7 @@ original's behavior.
 Published to Maven Central as `me.pinfort:tsselect`:
 
 ```kotlin
-dependencies { implementation("me.pinfort:tsselect:1.0.0") }
+dependencies { implementation("me.pinfort:tsselect:<version>") }
 ```
 
 It targets Java 17 bytecode, so consumers on 17, 21 and 25 can all use it; Kotlin
