@@ -1,5 +1,10 @@
 # tsselect
 
+[![CI](https://github.com/pinfort/tsselect-kt/actions/workflows/ci.yml/badge.svg)](https://github.com/pinfort/tsselect-kt/actions/workflows/ci.yml)
+[![Maven Central](https://img.shields.io/maven-central/v/me.pinfort/tsselect)](https://central.sonatype.com/artifact/me.pinfort/tsselect)
+![Library: Java 17+](https://img.shields.io/badge/library-Java%2017%2B-blue)
+[![License](https://img.shields.io/github/license/pinfort/tsselect-kt)](LICENSE)
+
 A Kotlin/JVM port of the classic `tsselect` MPEG-2 TS analyzer and stream (PID) selector.
 
 The project ships two things from one build:
