@@ -44,6 +44,8 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
 
       - name: Resolve version
         id: version
@@ -93,6 +95,8 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
 
       - name: Build the CLI distribution
         env:
@@ -173,6 +177,8 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
 
       # Uploads a signed bundle and leaves it validated in the Central Portal;
       # publishing it is a button there. Swap for `publishAndReleaseToMavenCentral`

@@ -26,6 +26,8 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
 
       - name: ktlint
         run: ./gradlew --no-daemon ktlintCheck
@@ -51,6 +53,8 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
 
       - name: Test with coverage
         run: ./gradlew --no-daemon test koverXmlReport koverHtmlReport
@@ -106,6 +110,8 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
 
       - name: Compile tsselect-core
         run: ./gradlew --no-daemon :tsselect-core:compileKotlin
